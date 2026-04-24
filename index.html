@@ -1,0 +1,2236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Brief Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Excel transformer library (polishes raw xlsx exports into comparison workbooks) -->
+<script src="./platform-comparison-transformer.js"></script>
+<style>
+  :root {
+    --cream: #f4f1ea;
+    --cream-2: #ece7db;
+    --ink: #1a1b1a;
+    --ink-2: #42433f;
+    --ink-soft: #6b6c66;
+    --ink-muted: #9a9a92;
+    --lime: #d4f462;
+    --accent-coral: #ff6b4a;
+    --accent-sky: #b8d8e8;
+    --rule: #d9d3c3;
+    --rule-2: #c4bca9;
+    --good: #3a7a42;
+    --warn: #d68b2e;
+    --danger: #c14a34;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  .app { max-width: 1320px; margin: 0 auto; padding: 24px 32px 80px; }
+
+  /* NAV */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; background: white; border-radius: 999px;
+    margin-bottom: 32px; box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+  }
+  .nav .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 17px; letter-spacing: -0.02em;
+    font-family: inherit; color: var(--ink);
+    background: transparent; border: none; cursor: pointer;
+    padding: 4px 8px; border-radius: 999px;
+    transition: background 0.15s;
+  }
+  .nav .brand:hover { background: var(--cream-2); }
+  .nav .brand .mark {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--lime); display: grid; place-items: center;
+    font-family: 'Instrument Serif', serif; font-style: italic;
+    font-size: 18px; color: var(--ink);
+    transition: transform 0.2s;
+  }
+  .nav .brand:hover .mark { transform: rotate(-8deg) scale(1.05); }
+  .nav .status-pill {
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--ink-soft); display: flex; align-items: center; gap: 8px;
+  }
+  .nav .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-muted); }
+  .nav .status-pill .dot.active { background: var(--good); }
+  .nav .actions button {
+    background: var(--ink); color: var(--cream); border: none;
+    padding: 10px 18px; border-radius: 999px;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: transform 0.15s;
+  }
+  .nav .actions button:hover { transform: translateY(-1px); }
+  .nav .actions button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule-2); }
+
+  /* UPLOAD */
+  .upload-hero {
+    display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 16px;
+    margin-top: 24px; align-items: stretch; min-height: 560px;
+  }
+  .upload-left {
+    background: var(--ink); color: var(--cream); border-radius: 28px;
+    padding: 48px 44px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .upload-left::before {
+    content: ''; position: absolute; top: -80px; right: -80px;
+    width: 280px; height: 280px; border-radius: 50%;
+    background: var(--lime); opacity: 0.95;
+  }
+  .upload-left::after {
+    content: ''; position: absolute; bottom: -40px; left: -40px;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: var(--accent-coral); opacity: 0.85;
+  }
+  .upload-left .content { position: relative; z-index: 2; }
+  .upload-left .eyebrow {
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--lime); letter-spacing: 0.04em;
+    margin-bottom: 20px; text-transform: uppercase;
+  }
+  .upload-left h1 {
+    font-weight: 500; font-size: clamp(38px, 4.5vw, 62px);
+    line-height: 1.02; letter-spacing: -0.035em; margin-bottom: 24px;
+  }
+  .upload-left h1 em {
+    font-family: 'Instrument Serif', serif; font-style: italic;
+    font-weight: 400; letter-spacing: -0.02em;
+  }
+  .upload-left .lead {
+    font-size: 17px; line-height: 1.5; color: rgba(244, 241, 234, 0.75);
+    max-width: 440px; position: relative; z-index: 2;
+  }
+  .upload-left .chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-top: 32px; position: relative; z-index: 2;
+  }
+  .upload-left .chip {
+    background: rgba(244, 241, 234, 0.1); border: 1px solid rgba(244, 241, 234, 0.2);
+    color: var(--cream); padding: 6px 12px; border-radius: 999px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+  }
+
+  .dropzone {
+    background: white; border-radius: 28px; padding: 36px;
+    display: flex; flex-direction: column; cursor: pointer;
+    transition: all 0.25s; position: relative;
+    border: 2px dashed var(--rule-2);
+  }
+  .dropzone:hover, .dropzone.dragover {
+    border-color: var(--ink); transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+  }
+  .dropzone .dz-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: var(--lime); display: grid; place-items: center;
+    margin-bottom: 24px; font-family: 'Instrument Serif', serif;
+    font-style: italic; font-size: 42px; color: var(--ink);
+  }
+  .dropzone h2 {
+    font-size: 28px; font-weight: 500; letter-spacing: -0.02em;
+    margin-bottom: 10px; line-height: 1.15;
+  }
+  .dropzone h2 em { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
+  .dropzone .dz-sub {
+    font-size: 14px; color: var(--ink-soft);
+    line-height: 1.5; margin-bottom: auto; padding-bottom: 28px;
+  }
+  .dropzone .dz-cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--lime); color: var(--ink);
+    padding: 14px 24px; border-radius: 999px;
+    font-weight: 500; font-size: 14px; align-self: flex-start;
+    transition: transform 0.15s;
+  }
+  .dropzone:hover .dz-cta { transform: translateY(-1px); }
+  .dropzone .dz-cta svg { width: 16px; height: 16px; }
+  .dropzone .dz-meta {
+    margin-top: 16px; font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--ink-muted);
+  }
+  .dropzone input { display: none; }
+
+  /* POST-UPLOAD CHOICE PANEL */
+  .choice-panel {
+    background: white; border-radius: 28px;
+    padding: 36px 40px; margin-top: 16px;
+    animation: fadeInUp 0.4s ease-out;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .choice-head { margin-bottom: 24px; }
+  .choice-head h3 {
+    font-size: 22px; font-weight: 500; letter-spacing: -0.02em;
+    margin: 0 0 6px 0;
+  }
+  .choice-head h3 em {
+    font-family: 'DM Mono', monospace; font-style: normal;
+    font-weight: 400; font-size: 16px; color: var(--ink-soft);
+  }
+  .choice-head .choice-sub {
+    color: var(--ink-soft); font-size: 14px; margin: 0;
+  }
+  .choice-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  .choice-card {
+    background: var(--cream); border: 1px solid transparent;
+    border-radius: 20px; padding: 24px 26px; cursor: pointer;
+    text-align: left; font-family: inherit; color: var(--ink);
+    display: flex; flex-direction: column; gap: 10px;
+    transition: all 0.2s;
+  }
+  .choice-card:hover:not(:disabled) {
+    transform: translateY(-2px); border-color: var(--ink);
+    box-shadow: 0 6px 20px rgba(26,27,26,0.08);
+  }
+  .choice-card:disabled { opacity: 0.55; cursor: not-allowed; }
+  .choice-card .choice-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--lime); display: grid; place-items: center;
+    font-size: 18px; font-weight: 600;
+  }
+  .choice-card .choice-title {
+    font-size: 18px; font-weight: 600; letter-spacing: -0.01em;
+  }
+  .choice-card .choice-desc {
+    color: var(--ink-soft); font-size: 13px; line-height: 1.55;
+    flex: 1;
+  }
+  .choice-card .choice-cta {
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--ink); margin-top: 8px;
+  }
+  .choice-card .choice-cta .spinner-inline {
+    display: inline-block; width: 10px; height: 10px;
+    border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; animation: spin-inline 0.8s linear infinite;
+    margin-right: 6px; vertical-align: middle;
+  }
+  @keyframes spin-inline { to { transform: rotate(360deg); } }
+
+  /* STATUS */
+  .status {
+    margin-top: 16px; padding: 16px 24px; background: white;
+    border-radius: 16px; border-left: 4px solid var(--lime);
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    color: var(--ink-2); display: none;
+  }
+  .status.error { border-left-color: var(--danger); color: var(--danger); }
+  .status.show { display: block; }
+
+  /* RESULTS */
+  .result-hero {
+    background: white; border-radius: 28px; padding: 48px 52px;
+    margin-bottom: 16px; position: relative; overflow: hidden;
+  }
+  .result-hero .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--ink-soft); background: var(--cream);
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 24px;
+  }
+  .result-hero .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); }
+  .result-hero h1 {
+    font-size: clamp(32px, 4.5vw, 56px); font-weight: 500;
+    letter-spacing: -0.035em; line-height: 1.02;
+    max-width: 1000px; margin-bottom: 24px;
+  }
+  .result-hero h1 em { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
+  .result-hero h1 .pill-num {
+    background: var(--lime); padding: 0 16px 4px;
+    border-radius: 999px; display: inline-block; line-height: 0.95;
+  }
+  .result-hero p {
+    font-size: 17px; line-height: 1.5;
+    color: var(--ink-soft); max-width: 720px;
+  }
+
+  section {
+    background: white; border-radius: 28px;
+    padding: 40px 44px; margin-bottom: 16px;
+  }
+  section.tinted { background: var(--ink); color: var(--cream); }
+  section.tinted h2, section.tinted h2 em { color: var(--cream); }
+  section.tinted .section-kicker { color: rgba(244,241,234,0.6); }
+  .section-head {
+    display: flex; align-items: baseline; gap: 16px;
+    margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .section-num { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--ink-muted); }
+  .section-title { font-size: 28px; font-weight: 500; letter-spacing: -0.025em; }
+  .section-title em { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
+  .section-kicker {
+    margin-left: auto; font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--ink-muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+
+  .insights { display: flex; flex-direction: column; gap: 10px; }
+  .insight {
+    background: var(--cream); border-radius: 20px;
+    padding: 24px 28px; display: grid;
+    grid-template-columns: auto 1fr auto; gap: 24px; align-items: center;
+  }
+  .insight.critical { background: var(--ink); color: var(--cream); }
+  .insight.critical .ins-body p { color: rgba(244,241,234,0.7); }
+  .insight.warn { background: #faf3e0; }
+  .insight.good { background: #eaf4ea; }
+  .insight.info { background: var(--accent-sky); }
+  .ins-badge {
+    padding: 6px 14px; border-radius: 999px;
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    white-space: nowrap; letter-spacing: 0.04em; text-transform: uppercase;
+    background: white; color: var(--ink);
+  }
+  .insight.critical .ins-badge { background: var(--lime); color: var(--ink); }
+  .insight.warn .ins-badge { background: var(--warn); color: white; }
+  .insight.good .ins-badge { background: var(--good); color: white; }
+  .insight.info .ins-badge { background: var(--ink); color: var(--cream); }
+  .ins-body h3 { font-size: 20px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.25; margin-bottom: 6px; }
+  .ins-body h3 em { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
+  .ins-body p { font-size: 13px; line-height: 1.5; color: var(--ink-soft); }
+  .ins-metric { text-align: right; min-width: 120px; }
+  .ins-metric .big { font-size: 32px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
+  .insight.critical .ins-metric .big { color: var(--lime); }
+  .ins-metric .unit {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--ink-muted); margin-top: 6px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .insight.critical .ins-metric .unit { color: rgba(244,241,234,0.5); }
+
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .kpi { background: var(--cream); border-radius: 20px; padding: 24px 24px 20px; transition: transform 0.15s; }
+  .kpi:hover { transform: translateY(-1px); }
+  .kpi.hero { background: var(--lime); }
+  .kpi .label {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--ink-soft); text-transform: uppercase;
+    letter-spacing: 0.04em; margin-bottom: 18px;
+  }
+  .kpi .value { font-size: 42px; font-weight: 500; letter-spacing: -0.035em; line-height: 1; }
+  .kpi.hero .value { font-weight: 600; }
+  .kpi .sub { font-size: 12px; color: var(--ink-soft); margin-top: 12px; line-height: 1.45; }
+
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .fc-col { background: var(--cream); border-radius: 20px; padding: 28px 28px 24px; }
+  .fc-col.ios { background: var(--ink); color: var(--cream); }
+  .fc-col.ios .fc-step { border-bottom-color: rgba(244,241,234,0.1); }
+  .fc-col.ios .fc-step .name { color: rgba(244,241,234,0.85); }
+  .fc-col.ios .fc-step .pct { color: rgba(244,241,234,0.5); }
+  .fc-col.ios .fc-step .count { color: var(--cream); }
+  .fc-col.android .platform-lbl { color: var(--good); }
+  .fc-col.ios .platform-lbl { color: var(--lime); }
+  .fc-col .platform-lbl {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    letter-spacing: 0.05em; text-transform: uppercase;
+    margin-bottom: 18px; display: flex;
+    justify-content: space-between; align-items: center;
+  }
+  .fc-col .platform-lbl .vol {
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    color: var(--ink-soft); text-transform: none; letter-spacing: 0;
+  }
+  .fc-col.ios .platform-lbl .vol { color: rgba(244,241,234,0.5); }
+  .fc-step {
+    padding: 10px 0; border-bottom: 1px solid var(--rule);
+    display: grid; grid-template-columns: 1fr auto auto;
+    gap: 16px; align-items: center; font-size: 13px;
+  }
+  .fc-step:last-child { border-bottom: none; }
+  .fc-step .name { color: var(--ink-2); }
+  .fc-step .count { font-family: 'DM Mono', monospace; color: var(--ink); }
+  .fc-step .pct { font-family: 'DM Mono', monospace; color: var(--ink-muted); min-width: 60px; text-align: right; }
+  .fc-step.highlight {
+    background: var(--lime); color: var(--ink);
+    margin: 0 -12px; padding: 10px 12px;
+    border-radius: 12px; border-bottom: none;
+  }
+  .fc-col.ios .fc-step.highlight { background: var(--lime); color: var(--ink); }
+  .fc-col.ios .fc-step.highlight .name,
+  .fc-col.ios .fc-step.highlight .count,
+  .fc-col.ios .fc-step.highlight .pct { color: var(--ink); }
+  .fc-step.highlight .pct { color: var(--ink); font-weight: 600; }
+
+  .pullquote {
+    font-family: 'Instrument Serif', serif; font-style: italic;
+    font-size: 22px; line-height: 1.35; color: var(--ink-2);
+    max-width: 780px; margin-top: 24px;
+    padding-left: 20px; border-left: 3px solid var(--lime);
+  }
+  section.tinted .pullquote { color: rgba(244,241,234,0.9); }
+
+  .chart-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
+  .chart-head .title { font-size: 14px; color: var(--ink-soft); }
+  section.tinted .chart-head .title { color: rgba(244,241,234,0.7); }
+  .chart-legend { display: flex; gap: 16px; font-family: 'DM Mono', monospace; font-size: 11px; }
+  .chart-legend .item {
+    display: flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: opacity 0.15s;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--cream); color: var(--ink);
+  }
+  section.tinted .chart-legend .item { background: rgba(244,241,234,0.1); color: var(--cream); }
+  .chart-legend .item.hidden { opacity: 0.4; }
+  .chart-legend .swatch { width: 14px; height: 3px; }
+  .chart-svg-wrap { background: var(--cream); border-radius: 20px; padding: 24px 8px 8px; }
+  section.tinted .chart-svg-wrap { background: rgba(244,241,234,0.05); }
+
+  .explore-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .control { background: var(--cream); border-radius: 16px; padding: 14px 16px; }
+  .control label {
+    display: block; font-family: 'DM Mono', monospace;
+    font-size: 10px; color: var(--ink-muted);
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px;
+  }
+  .control select {
+    width: 100%; background: transparent; color: var(--ink);
+    border: none; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500; cursor: pointer; outline: none;
+  }
+
+  .explore-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px; }
+  .stat { background: var(--cream); border-radius: 16px; padding: 16px 18px; }
+  .stat .lbl {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    color: var(--ink-muted); text-transform: uppercase;
+    letter-spacing: 0.04em; margin-bottom: 6px;
+  }
+  .stat .val { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; line-height: 1; }
+
+  footer { text-align: center; padding: 40px 0 0; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--ink-muted); }
+  footer em { font-family: 'Instrument Serif', serif; font-style: italic; font-size: 14px; color: var(--ink-2); }
+
+  .ai-section { position: relative; }
+  .ai-intro {
+    font-size: 15px; line-height: 1.55; color: var(--ink-soft);
+    max-width: 680px; margin-bottom: 24px;
+  }
+  .ai-buttons {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+  }
+  .ai-btn {
+    background: var(--cream); border: none; border-radius: 20px;
+    padding: 24px; text-align: left; cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    font-family: inherit; color: var(--ink);
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .ai-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+  .ai-btn.featured { background: var(--ink); color: var(--cream); }
+  .ai-btn.featured .ai-btn-sub { color: rgba(244,241,234,0.65); }
+  .ai-btn-head { display: flex; align-items: center; gap: 12px; }
+  .ai-btn-icon {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--lime); color: var(--ink);
+    display: grid; place-items: center;
+    font-family: 'Instrument Serif', serif;
+    font-size: 20px; font-style: italic;
+  }
+  .ai-btn.featured .ai-btn-icon { background: var(--lime); }
+  .ai-btn-label { font-size: 17px; font-weight: 600; letter-spacing: -0.015em; }
+  .ai-btn-sub { font-size: 13px; color: var(--ink-soft); line-height: 1.45; }
+
+  /* MODAL */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(26,27,26,0.55);
+    backdrop-filter: blur(4px); z-index: 100;
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 48px 24px; overflow-y: auto;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--cream); border-radius: 28px;
+    width: 100%; max-width: 760px; padding: 36px 40px;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 24px; right: 24px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--cream-2); border: none; cursor: pointer;
+    font-size: 18px; color: var(--ink); display: grid; place-items: center;
+    transition: background 0.15s;
+  }
+  .modal-close:hover { background: var(--rule); }
+  .modal-eyebrow {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--ink-soft); letter-spacing: 0.05em;
+    text-transform: uppercase; margin-bottom: 12px;
+  }
+  .modal h2 {
+    font-size: 26px; font-weight: 500; letter-spacing: -0.025em;
+    margin-bottom: 8px; line-height: 1.2;
+  }
+  .modal h2 em { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
+  .modal-lead { font-size: 14px; color: var(--ink-soft); line-height: 1.55; margin-bottom: 20px; }
+  .modal textarea, .modal .prompt-box {
+    width: 100%; min-height: 280px; max-height: 400px;
+    background: white; border: 1px solid var(--rule);
+    border-radius: 16px; padding: 18px 20px;
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    line-height: 1.55; color: var(--ink-2);
+    resize: vertical; outline: none;
+    white-space: pre-wrap; overflow-y: auto;
+  }
+  .modal textarea:focus { border-color: var(--ink); }
+  .modal .question-input {
+    width: 100%; background: white; border: 1px solid var(--rule);
+    border-radius: 16px; padding: 14px 18px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    color: var(--ink); outline: none; margin-bottom: 16px;
+  }
+  .modal .question-input:focus { border-color: var(--ink); }
+  .modal-actions {
+    display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap;
+  }
+  .modal-btn {
+    padding: 12px 20px; border-radius: 999px; border: none;
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    cursor: pointer; display: inline-flex; align-items: center;
+    gap: 8px; transition: transform 0.15s;
+  }
+  .modal-btn:hover { transform: translateY(-1px); }
+  .modal-btn.primary { background: var(--lime); color: var(--ink); }
+  .modal-btn.secondary { background: var(--ink); color: var(--cream); }
+  .modal-btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--rule-2); }
+  .modal-btn.copied { background: var(--good); color: white; }
+  .modal-footer {
+    margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--rule);
+    font-size: 12px; color: var(--ink-soft); line-height: 1.55;
+  }
+  .modal-footer strong { color: var(--ink); }
+
+  /* Pullquote + AI button row */
+  .pullquote-row {
+    display: flex; gap: 20px; align-items: flex-start;
+    justify-content: space-between; flex-wrap: wrap;
+    margin-top: 24px;
+  }
+  .pullquote-row .pullquote { margin: 0; flex: 1; min-width: 280px; }
+  .mini-ai-btn {
+    background: var(--lime); color: var(--ink); border: none;
+    padding: 10px 18px; border-radius: 999px;
+    font-family: inherit; font-size: 12px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; flex: none;
+    transition: transform 0.15s;
+  }
+  .mini-ai-btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .mini-ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .mini-ai-btn.dark { background: var(--lime); color: var(--ink); }
+
+  /* AI SETUP + RESPONSE */
+  .ai-setup {
+    background: var(--cream-2); border-radius: 16px;
+    padding: 14px 18px; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .ai-setup input {
+    flex: 1; min-width: 220px; background: white;
+    border: 1px solid var(--rule); border-radius: 999px;
+    padding: 10px 16px; font-family: 'DM Mono', monospace;
+    font-size: 12px; color: var(--ink); outline: none;
+  }
+  .ai-setup input:focus { border-color: var(--ink); }
+  .ai-setup .hint {
+    font-size: 11px; color: var(--ink-muted); width: 100%;
+  }
+  .ai-setup .hint a { color: var(--ink-2); }
+
+  .ai-response {
+    background: white; border: 1px solid var(--rule);
+    border-radius: 20px; padding: 24px 28px; margin-top: 18px;
+    max-height: 640px; overflow-y: auto; display: none;
+  }
+  .ai-response.show { display: block; }
+  .ai-response .resp-head {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+  .ai-response .resp-lbl {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ai-response .resp-actions { display: flex; gap: 8px; }
+  .ai-response .resp-btn {
+    background: var(--cream-2); border: none; border-radius: 999px;
+    padding: 6px 14px; font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--ink); cursor: pointer; transition: background 0.15s;
+  }
+  .ai-response .resp-btn:hover { background: var(--rule); }
+  .ai-response .resp-btn.copied { background: var(--good); color: white; }
+  .ai-response .spinner {
+    width: 10px; height: 10px; border: 2px solid var(--rule);
+    border-top-color: var(--ink); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ai-response.done .spinner { display: none; }
+  .ai-response .resp-body {
+    font-size: 14px; line-height: 1.65; color: var(--ink-2);
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .ai-response .resp-body strong { color: var(--ink); }
+  .ai-response .resp-body h1, .ai-response .resp-body h2, .ai-response .resp-body h3 {
+    font-weight: 600; color: var(--ink); margin: 16px 0 6px;
+  }
+  .ai-response .resp-body h1 { font-size: 18px; }
+  .ai-response .resp-body h2 { font-size: 16px; }
+  .ai-response .resp-body h3 { font-size: 14px; }
+  .ai-response .resp-body ul, .ai-response .resp-body ol { padding-left: 22px; margin: 6px 0; }
+  .ai-response .resp-error { color: var(--danger); }
+
+  /* Chat mode */
+  .chat-history {
+    margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--rule);
+  }
+  .chat-msg {
+    margin-bottom: 14px; padding: 12px 16px; border-radius: 14px;
+    font-size: 14px; line-height: 1.6;
+  }
+  .chat-msg.user {
+    background: var(--cream-2); color: var(--ink); margin-left: 40px;
+  }
+  .chat-msg.assistant {
+    background: white; border: 1px solid var(--rule); color: var(--ink-2);
+    margin-right: 40px; white-space: pre-wrap;
+  }
+  .chat-msg .role {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ink-muted); margin-bottom: 6px;
+  }
+  .chat-input-row {
+    display: flex; gap: 8px; margin-top: 14px;
+    padding-top: 16px; border-top: 1px solid var(--rule);
+  }
+  .chat-input-row input {
+    flex: 1; background: var(--cream-2); border: 1px solid transparent;
+    border-radius: 999px; padding: 12px 18px;
+    font-family: inherit; font-size: 14px; color: var(--ink); outline: none;
+  }
+  .chat-input-row input:focus { border-color: var(--ink); background: white; }
+  .chat-send-btn {
+    background: var(--lime); color: var(--ink); border: none;
+    padding: 10px 22px; border-radius: 999px;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .run-btn {
+    background: var(--lime); color: var(--ink); border: none;
+    padding: 12px 22px; border-radius: 999px;
+    font-family: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: transform 0.15s;
+  }
+  .run-btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .run-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* Chart tooltips */
+  .chart-svg-wrap { position: relative; }
+  .chart-tooltip {
+    position: absolute; pointer-events: none;
+    background: var(--ink); color: var(--cream);
+    padding: 8px 12px; border-radius: 10px;
+    font-family: 'DM Mono', monospace; font-size: 11px; line-height: 1.5;
+    white-space: nowrap; opacity: 0; transform: translate(-50%, calc(-100% - 10px));
+    transition: opacity 0.12s; z-index: 10;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+  }
+  .chart-tooltip.show { opacity: 1; }
+  .chart-tooltip .tt-day {
+    color: var(--ink-muted); font-size: 10px; text-transform: uppercase;
+    letter-spacing: 0.04em; margin-bottom: 3px;
+  }
+  .chart-tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
+  .chart-tooltip .tt-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 900px) {
+    .app { padding: 16px; }
+    .upload-hero { grid-template-columns: 1fr; min-height: auto; }
+    .kpis { grid-template-columns: 1fr 1fr; }
+    .compare { grid-template-columns: 1fr; }
+    .insight { grid-template-columns: 1fr; gap: 12px; }
+    .ins-metric { text-align: left; }
+    .explore-stats { grid-template-columns: 1fr 1fr; }
+    .ai-buttons { grid-template-columns: 1fr; }
+    .modal { padding: 28px 24px; }
+    section { padding: 28px 24px; }
+    .upload-left, .result-hero { padding: 32px 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="nav">
+    <button class="brand" onclick="handleHomeClick()" title="Back to start — upload a new file" aria-label="Home">
+      <span class="mark">H</span>
+      <span>Helperis</span>
+    </button>
+    <div class="status-pill" id="navStatus">
+      <span class="dot"></span>
+      <span>No file loaded</span>
+    </div>
+    <div class="actions" id="navActions"></div>
+  </div>
+
+  <!-- UPLOAD VIEW -->
+  <div id="uploadView">
+    <div class="upload-hero">
+      <div class="upload-left">
+        <div class="content">
+          <div class="eyebrow">◆ I had to try it</div>
+          <h1>Drop in the data.<br>Get back the <em>story</em>.</h1>
+        </div>
+        <p class="lead">Built for the eSIM funnel export format — 8 sheets of daily data. Surfaces the biggest platform gaps, drop-offs, and trend lines automatically.</p>
+        <div class="chips">
+          <span class="chip">◆ Auto-insights</span>
+          <span class="chip">◆ Funnel breakdowns</span>
+          <span class="chip">◆ Manual drill-down</span>
+          <span class="chip">◆ Private &amp; local</span>
+        </div>
+      </div>
+
+      <label class="dropzone" for="fileInput" id="dropzone">
+        <div class="dz-icon">↑</div>
+        <h2>Upload your <em>.xlsx</em></h2>
+        <p class="dz-sub">Drop the file here or tap to browse. Nothing is uploaded to a server — everything runs locally on your device.</p>
+        <div class="dz-cta">
+          Choose file
+          <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 8h10m0 0l-4-4m4 4l-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="dz-meta">Expected: 8 sheets · max ~50MB · .xlsx / .xls</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls">
+      </label>
+    </div>
+
+    <div class="status" id="statusBox"></div>
+
+    <!-- POST-UPLOAD CHOICE PANEL — hidden until a file is successfully parsed -->
+    <div class="choice-panel hidden" id="choicePanel">
+      <div class="choice-head">
+        <h3>File ready: <em id="choiceFileName">—</em></h3>
+        <p class="choice-sub">Choose what to do next. Both run locally in your browser — nothing is uploaded.</p>
+      </div>
+      <div class="choice-grid">
+        <button class="choice-card" id="choiceAnalyze">
+          <div class="choice-icon">◆</div>
+          <div class="choice-title">Analyze</div>
+          <div class="choice-desc">Extract insights, build charts, and open the interactive report.</div>
+          <div class="choice-cta">Run analysis →</div>
+        </button>
+        <button class="choice-card" id="choiceTransform">
+          <div class="choice-icon">⇄</div>
+          <div class="choice-title">Make Excel-readable</div>
+          <div class="choice-desc">Transform the raw export into a polished workbook with a Platform Comparison summary, visual sheets, live formulas, and embedded charts.</div>
+          <div class="choice-cta" id="choiceTransformCta">Download polished .xlsx →</div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS VIEW -->
+  <div id="resultsView" class="hidden">
+
+    <div class="result-hero">
+      <span class="eyebrow"><span class="dot"></span> <span id="heroEyebrow">Analysis complete</span></span>
+      <h1 id="heroTitle">Loading…</h1>
+      <p id="heroDek"></p>
+    </div>
+
+    <section>
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2 class="section-title">Top <em>insights</em></h2>
+        <span class="section-kicker">Ranked by severity</span>
+      </div>
+      <div class="insights" id="insightsList"></div>
+    </section>
+
+    <section class="ai-section">
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2 class="section-title">Get AI <em>analysis</em></h2>
+        <span class="section-kicker">Copy-paste prompts</span>
+      </div>
+      <p class="ai-intro">Enter your Gemini API key and click any button below to run AI analysis on your data. The response streams back here.</p>
+
+      <div class="ai-setup">
+        <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API key (starts with AIza…)" autocomplete="off" spellcheck="false" />
+        <div class="hint">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a> — no credit card needed. Your key stays in this browser only.</div>
+      </div>
+
+      <div class="ai-buttons">
+        <button class="ai-btn" data-kind="summary">
+          <div class="ai-btn-head">
+            <span class="ai-btn-icon">✦</span>
+            <span class="ai-btn-label">Executive summary</span>
+          </div>
+          <p class="ai-btn-sub">One-paragraph narrative of what the data shows &amp; why it matters.</p>
+        </button>
+        <button class="ai-btn featured" data-kind="brief">
+          <div class="ai-btn-head">
+            <span class="ai-btn-icon">◆</span>
+            <span class="ai-btn-label">Helperis brief</span>
+          </div>
+          <p class="ai-btn-sub">Problem, evidence, solutions, risks.</p>
+        </button>
+        <button class="ai-btn" data-kind="qa">
+          <div class="ai-btn-head">
+            <span class="ai-btn-icon">?</span>
+            <span class="ai-btn-label">Ask a question</span>
+          </div>
+          <p class="ai-btn-sub">Ask anything about the data &amp; get a grounded answer.</p>
+        </button>
+      </div>
+
+      <div class="ai-response" id="aiResponse">
+        <div class="resp-head">
+          <span class="resp-lbl"><span class="spinner"></span><span id="respStatus">Thinking…</span></span>
+          <div class="resp-actions" id="respActions" style="display:none">
+            <button class="resp-btn" id="copyBtn" onclick="copyResponse()">Copy</button>
+            <button class="resp-btn" id="downloadBtn" onclick="downloadResponse()">↓ Download</button>
+          </div>
+        </div>
+        <div class="resp-body" id="respBody"></div>
+
+        <!-- Chat area, shown after brief completes -->
+        <div class="chat-history" id="chatHistory" style="display:none"></div>
+        <div class="chat-input-row" id="chatInputRow" style="display:none">
+          <input type="text" id="chatInput" placeholder="Ask a follow-up question…" />
+          <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">Send</button>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="section-num">03</span>
+        <h2 class="section-title">Headline <em>numbers</em></h2>
+        <span class="section-kicker" id="kpiKicker">Full window</span>
+      </div>
+      <div class="kpis" id="kpiGrid"></div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="section-num">04</span>
+        <h2 class="section-title">Purchase <em>funnels</em></h2>
+        <span class="section-kicker">Where customers drop off</span>
+      </div>
+      <div class="compare" id="purchaseFunnels"></div>
+      <div class="pullquote-row">
+        <div class="pullquote" id="funnelNote"></div>
+        <button class="mini-ai-btn" onclick="analyzeSection('purchase')" title="Ask Gemini to analyze the purchase funnels">✦ AI analysis</button>
+      </div>
+    </section>
+
+    <section class="tinted">
+      <div class="section-head">
+        <span class="section-num" style="color:var(--lime)">05</span>
+        <h2 class="section-title">Post-purchase <em>install</em></h2>
+        <span class="section-kicker">What happens after checkout</span>
+      </div>
+      <div class="compare" id="installFunnels"></div>
+      <div class="pullquote-row">
+        <div class="pullquote" id="installNote"></div>
+        <button class="mini-ai-btn dark" onclick="analyzeSection('install')" title="Ask Gemini to analyze the install funnels">✦ AI analysis</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="section-num">06</span>
+        <h2 class="section-title">Daily <em>trends</em></h2>
+        <span class="section-kicker" id="trendKicker">Install success</span>
+      </div>
+      <div>
+        <div class="chart-head">
+          <span class="title">Install success rate by platform (7-day rolling avg)</span>
+          <div class="chart-legend" id="trendLegend"></div>
+        </div>
+        <div class="chart-svg-wrap">
+          <svg id="trendChart" viewBox="0 0 1200 320" style="width:100%; height:auto;"></svg>
+          <div class="chart-tooltip" id="trendTip"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <span class="section-num">07</span>
+        <h2 class="section-title"><em>Explore</em> any metric</h2>
+        <span class="section-kicker">Manual drill-down</span>
+      </div>
+
+      <div class="explore-controls">
+        <div class="control"><label>Sheet</label><select id="exSheet"></select></div>
+        <div class="control"><label>Column</label><select id="exColumn"></select></div>
+        <div class="control"><label>Smoothing</label><select id="exSmooth">
+          <option value="1">Daily (no smoothing)</option>
+          <option value="3">3-day rolling</option>
+          <option value="7" selected>7-day rolling</option>
+          <option value="14">14-day rolling</option>
+        </select></div>
+        <div class="control"><label>As ratio of</label><select id="exRatio">
+          <option value="">— show raw values —</option>
+        </select></div>
+      </div>
+
+      <div class="explore-stats" id="exStats"></div>
+
+      <div class="chart-svg-wrap">
+        <svg id="exChart" viewBox="0 0 1200 300" style="width:100%; height:auto;"></svg>
+        <div class="chart-tooltip" id="exTip"></div>
+      </div>
+    </section>
+
+    <footer>
+      <em>Evidence precedes hypothesis.</em><br><br>
+      <span id="footerMeta"></span>
+    </footer>
+
+  </div>
+
+</div>
+
+<!-- Q&A MODAL (only shown for "Ask a question") -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <div class="modal-eyebrow">◆ Ask a question</div>
+    <h2>Ask <em>anything</em> about the data</h2>
+    <p class="modal-lead">Type your question below. Gemini will answer using your actual numbers.</p>
+    <input type="text" class="question-input" id="modalQuestion" placeholder="e.g. Why is iOS install success so much lower than Android?" />
+    <div class="modal-actions">
+      <button class="modal-btn primary run-btn" onclick="runQA()">✦ Ask</button>
+      <button class="modal-btn ghost" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let DATA = null;
+let SCHEMA = {};
+
+const SHEET_PATTERNS = [
+  { key: 'andPurchase',  match: ['android','purchase','funnel'], cols: 8,
+    headers: ['Sessions','Explore Plans','Login Click','Login Success','View Countries','Selected Plan','Checkout','Transactions'] },
+  { key: 'iosPurchase',  match: ['ios','purchase','funnel'], cols: 8,
+    headers: ['Sessions','Explore Plans','Login Click','Login Success','View Countries','Selected Plan','Checkout','Transactions'] },
+  { key: 'web',          match: ['web','flow'], cols: 4,
+    headers: ['Landing','Pricing','Checkout','Transactions'] },
+  { key: 'iosEsim',      match: ['ios','esim','setup'], cols: 4,
+    headers: ['New Transactions','Install Click','Install Success','Install Failed'] },
+  { key: 'andEsim',      match: ['android','esim','setup'], cols: 4,
+    headers: ['New Transactions','Install Click','Install Success','Install Failed'] },
+  { key: 'dailyCR',      match: ['daily','cr'], cols: 4,
+    headers: ['Android CR','iOS CR','Web CR','Total CR'] },
+  { key: 'webVisitors',  match: ['web','daily','visit'], cols: 2,
+    headers: ['New Users','Returning Users'] },
+  { key: 'dailySessions',match: ['daily','session'], cols: 3,
+    headers: ['Android Sessions','iOS Sessions','Web Sessions'] },
+];
+
+const fileInput = document.getElementById('fileInput');
+const dropzone = document.getElementById('dropzone');
+const statusBox = document.getElementById('statusBox');
+
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault(); dropzone.classList.add('dragover');
+}));
+['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => {
+  e.preventDefault(); dropzone.classList.remove('dragover');
+}));
+dropzone.addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+
+function setStatus(msg, isError=false) {
+  statusBox.textContent = msg;
+  statusBox.classList.add('show');
+  statusBox.classList.toggle('error', isError);
+}
+
+// Stash the raw uploaded file so we can use it for transform (needs the bytes, not just parsed data)
+let RAW_FILE = null;
+
+function handleFile(file) {
+  RAW_FILE = file;
+  setStatus(`Reading ${file.name}…`);
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const parsed = parseWorkbook(wb);
+      DATA = parsed.data;
+      SCHEMA = parsed.schema;
+      setStatus(`✓ Loaded ${file.name} · ${Object.keys(DATA).length} sheets recognized`);
+      showChoicePanel(file.name);
+    } catch (err) {
+      console.error(err);
+      setStatus('✗ ' + err.message, true);
+      hideChoicePanel();
+    }
+  };
+  reader.onerror = () => setStatus('✗ Could not read file', true);
+  reader.readAsArrayBuffer(file);
+}
+
+function showChoicePanel(filename) {
+  const panel = document.getElementById('choicePanel');
+  document.getElementById('choiceFileName').textContent = filename;
+  panel.classList.remove('hidden');
+  // Reset the transform button in case it was in a loading state from a previous file
+  const transformBtn = document.getElementById('choiceTransform');
+  const transformCta = document.getElementById('choiceTransformCta');
+  transformBtn.disabled = false;
+  transformCta.textContent = 'Download polished .xlsx →';
+  // Scroll the choice panel into view
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);
+}
+
+function hideChoicePanel() {
+  document.getElementById('choicePanel').classList.add('hidden');
+}
+
+// Analyze button → run the normal render flow
+document.getElementById('choiceAnalyze').addEventListener('click', () => {
+  if (!DATA || !RAW_FILE) return;
+  renderResults(RAW_FILE.name);
+});
+
+// Transform button → call the polisher library
+document.getElementById('choiceTransform').addEventListener('click', async () => {
+  if (!RAW_FILE) return;
+  const lib = window.PlatformComparisonTransformer;
+  if (!lib) {
+    setStatus('✗ Transformer library failed to load. Check that platform-comparison-transformer.js is present next to this file.', true);
+    return;
+  }
+  const btn = document.getElementById('choiceTransform');
+  const cta = document.getElementById('choiceTransformCta');
+  btn.disabled = true;
+  cta.innerHTML = '<span class="spinner-inline"></span>Transforming…';
+  try {
+    const outputName = RAW_FILE.name.replace(/\.xlsx?$/i, '') + '_polished.xlsx';
+    await lib.transformAndDownload(RAW_FILE, outputName);
+    cta.textContent = '✓ Downloaded — click to run again';
+    btn.disabled = false;
+  } catch (err) {
+    console.error(err);
+    cta.textContent = '✗ Failed: ' + err.message;
+    btn.disabled = false;
+  }
+});
+
+function parseWorkbook(wb) {
+  const data = {};
+  const schema = {};
+  const names = wb.SheetNames;
+  for (const p of SHEET_PATTERNS) {
+    const match = findBestSheet(names, p.match);
+    if (!match) continue;
+    const sheet = wb.Sheets[match];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+    const numeric = rows.filter(r => r && r.length >= p.cols &&
+      r.slice(0, p.cols).every(v => typeof v === 'number' && !isNaN(v)));
+    if (numeric.length > 0) {
+      data[p.key] = numeric.map(r => r.slice(0, p.cols));
+      schema[p.key] = { sheetName: match, headers: p.headers };
+    }
+  }
+  const required = ['iosPurchase','andPurchase','iosEsim','andEsim'];
+  const missing = required.filter(k => !data[k]);
+  if (missing.length) throw new Error(`Missing required sheets: ${missing.join(', ')}`);
+  return { data, schema };
+}
+
+function findBestSheet(names, tokens) {
+  for (const name of names) {
+    const lower = name.toLowerCase();
+    if (tokens.every(t => lower.includes(t.toLowerCase()))) return name;
+  }
+  return null;
+}
+
+function sumCols(rows) {
+  if (!rows || rows.length === 0) return [];
+  const n = rows[0].length;
+  const t = Array(n).fill(0);
+  for (const r of rows) for (let i = 0; i < n; i++) t[i] += r[i] || 0;
+  return t;
+}
+function fmt(n) {
+  if (n == null || isNaN(n)) return '—';
+  if (Math.abs(n) >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if (Math.abs(n) >= 10000) return Math.round(n/1000)+'K';
+  if (Math.abs(n) >= 1000) return Math.round(n).toLocaleString();
+  return Math.round(n).toLocaleString();
+}
+function pct(v, d=1) { return (v*100).toFixed(d)+'%'; }
+function rolling(arr, w) {
+  if (w <= 1) return arr.slice();
+  const out = [];
+  for (let i = 0; i < arr.length; i++) {
+    const s = Math.max(0, i-w+1);
+    const slice = arr.slice(s, i+1).filter(v => v != null && !isNaN(v));
+    out.push(slice.length ? slice.reduce((a,b)=>a+b,0)/slice.length : null);
+  }
+  return out;
+}
+
+function generateInsights() {
+  const out = [];
+  const ios = sumCols(DATA.iosPurchase);
+  const and = sumCols(DATA.andPurchase);
+  const web = sumCols(DATA.web);
+  const iosE = sumCols(DATA.iosEsim);
+  const andE = sumCols(DATA.andEsim);
+
+  const iosR = iosE[2]/iosE[0], andR = andE[2]/andE[0];
+  const gap = andR - iosR;
+  if (Math.abs(gap) > 0.1) {
+    const worse = gap > 0 ? 'iOS' : 'Android';
+    const better = gap > 0 ? 'Android' : 'iOS';
+    out.push({
+      sev: 'critical', sevLabel: 'Critical',
+      title: `${worse} install success is <em>${(Math.abs(gap)*100).toFixed(0)} pp behind</em> ${better}`,
+      body: `Only ${pct(gap>0?iosR:andR)} of paying ${worse} customers have a confirmed install, vs ${pct(gap>0?andR:iosR)} on ${better}. Same product, two platforms, dramatically different outcomes.`,
+      metric: pct(gap>0?iosR:andR, 0), unit: `${worse} install rate`,
+    });
+  }
+
+  [['ios', iosE], ['and', andE]].forEach(([k, d]) => {
+    const v = d[1] - d[2] - d[3];
+    const rate = v / d[1];
+    if (rate > 0.15) {
+      const label = k === 'ios' ? 'iOS' : 'Android';
+      out.push({
+        sev: 'warn', sevLabel: 'Telemetry',
+        title: `${label}: <em>${fmt(v)}</em> users clicked install then vanished`,
+        body: `${pct(rate)} of users who clicked "Install" on ${label} have no success and no failure event. Either real drop-off inside the system install sheet, or an instrumentation gap. Worth validating before building.`,
+        metric: pct(rate, 0), unit: 'click → nothing',
+      });
+    }
+  });
+
+  const findDrop = (t, h, lbl) => {
+    let worstIdx = -1, worstRate = 1;
+    for (let i = Math.max(1, t.length > 5 ? 4 : 1); i < t.length; i++) {
+      const r = t[i]/t[i-1];
+      if (r < worstRate && r > 0) { worstRate = r; worstIdx = i; }
+    }
+    if (worstRate < 0.5) {
+      return {
+        sev: 'warn', sevLabel: 'Drop-off',
+        title: `${lbl}: biggest drop at <em>${h[worstIdx-1]} → ${h[worstIdx]}</em>`,
+        body: `Only ${pct(worstRate)} of users continue to the next step. ${worstRate < 0.3 ? 'Severe — investigate whether this is a real barrier or an intent filter.' : 'Significant — worth investigating the user experience at this step.'}`,
+        metric: pct(worstRate, 0), unit: 'step conversion',
+      };
+    }
+    return null;
+  };
+  const dIos = findDrop(ios, ['Sessions','Explore','Login click','Login ok','Countries','Plan','Checkout','Tx'], 'iOS funnel');
+  const dAnd = findDrop(and, ['Sessions','Explore','Login click','Login ok','Countries','Plan','Checkout','Tx'], 'Android funnel');
+  const dWeb = findDrop(web, ['Landing','Pricing','Checkout','Tx'], 'Web funnel');
+  [dIos, dAnd, dWeb].forEach(d => d && out.push(d));
+
+  const iosCR = ios[7]/ios[0], andCR = and[7]/and[0], webCR = web[3]/web[0];
+  const arr = [{p:'iOS',v:iosCR},{p:'Android',v:andCR},{p:'Web',v:webCR}];
+  arr.sort((a,b) => b.v - a.v);
+  if (arr[0].v/arr[2].v > 2) {
+    out.push({
+      sev: 'info', sevLabel: 'Helperis',
+      title: `<em>${arr[0].p}</em> converts ${(arr[0].v/arr[2].v).toFixed(1)}× better than ${arr[2].p}`,
+      body: `${arr[0].p} session → transaction rate is ${pct(arr[0].v)}, vs ${pct(arr[2].v)} on ${arr[2].p}. A channel-quality gap of this size warrants understanding what's so different between them.`,
+      metric: pct(arr[0].v, 1), unit: `${arr[0].p} conversion`,
+    });
+  }
+
+  if (DATA.iosEsim.length >= 60) {
+    // Compare first third vs last third — works for any window size
+    const n = DATA.iosEsim.length;
+    const chunk = Math.max(14, Math.floor(n / 3));
+    const f = DATA.iosEsim.slice(0, chunk), l = DATA.iosEsim.slice(-chunk);
+    const fR = sumCols(f)[2]/sumCols(f)[0], lR = sumCols(l)[2]/sumCols(l)[0];
+    const d = lR - fR;
+    if (Math.abs(d) > 0.02) {
+      out.push({
+        sev: d < 0 ? 'warn' : 'good', sevLabel: 'Trend',
+        title: `iOS install success is <em>${d<0?'declining':'improving'}</em>: ${pct(fR,0)} → ${pct(lR,0)}`,
+        body: `Over the window, the rate moved ${(d*100).toFixed(1)} percentage points between the first and last ${chunk} days. ${d<0?'Check for releases, OS updates, or seasonal effects near the inflection point.':'Something is helping — worth identifying so it can be reinforced.'}`,
+        metric: (d>=0?'+':'')+(d*100).toFixed(1)+'pp', unit: 'first → last period',
+      });
+    } else {
+      out.push({
+        sev: 'info', sevLabel: 'Trend',
+        title: `iOS install success is <em>flat</em> across the window`,
+        body: `Rate held near ${pct(lR,0)} throughout. This is a structural issue, not a regression from a recent change — which makes it more urgent, not less.`,
+        metric: pct(lR, 0), unit: 'stable',
+      });
+    }
+  }
+
+  // Normalize to per-month based on actual window length
+  const windowDays = DATA.iosEsim.length;
+  const months = windowDays / 30;
+  const atRisk = (iosE[0] - iosE[2]) / months;
+  out.push({
+    sev: 'info', sevLabel: 'Scale',
+    title: `~<em>${fmt(atRisk)}</em> iOS customers/month pay without confirmed install`,
+    body: `Across the ${windowDays}-day window, ${fmt(iosE[0] - iosE[2])} paying iOS customers had no confirmed install event. Each represents potential refund risk, support load, and reputational exposure.`,
+    metric: fmt(atRisk), unit: 'users / month',
+  });
+
+  const order = { critical: 0, warn: 1, info: 2, good: 3 };
+  out.sort((a,b) => order[a.sev] - order[b.sev]);
+  return out;
+}
+
+function renderResults(fileName) {
+  document.getElementById('uploadView').classList.add('hidden');
+  document.getElementById('resultsView').classList.remove('hidden');
+  document.getElementById('navStatus').innerHTML = `<span class="dot active"></span><span>${fileName}</span>`;
+  document.getElementById('navActions').innerHTML = `<button class="ghost" onclick="resetApp()">New file</button>`;
+  document.getElementById('footerMeta').textContent = `Source: ${fileName} · ${DATA.iosEsim.length} days · ${Object.keys(DATA).length} sheets`;
+
+  // Populate dynamic day-count kickers
+  const days = DATA.iosEsim.length;
+  document.getElementById('kpiKicker').textContent = `${days}-day window`;
+  document.getElementById('trendKicker').textContent = `Install success · ${days} days`;
+
+  renderHero();
+  renderInsights();
+  renderKPIs();
+  renderFunnels();
+  renderInstallFunnels();
+  renderTrendChart();
+  setupExplore();
+  wireAIButtons();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function handleHomeClick() {
+  // If nothing loaded, just scroll to top (already on home)
+  if (!DATA) {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+  // Confirm before wiping loaded data
+  if (confirm('Start over? This will clear the current analysis and any AI responses.')) {
+    resetApp();
+  }
+}
+
+function resetApp() {
+  DATA = null; SCHEMA = {}; RAW_FILE = null;
+  document.getElementById('uploadView').classList.remove('hidden');
+  document.getElementById('resultsView').classList.add('hidden');
+  document.getElementById('navStatus').innerHTML = '<span class="dot"></span><span>No file loaded</span>';
+  document.getElementById('navActions').innerHTML = '';
+  statusBox.classList.remove('show');
+  fileInput.value = '';
+  hideChoicePanel();
+  // Clear AI state
+  LAST_RESPONSE_TEXT = '';
+  LAST_RESPONSE_KIND = '';
+  CONVERSATION = [];
+  const aiResp = document.getElementById('aiResponse');
+  if (aiResp) {
+    aiResp.classList.remove('show');
+    document.getElementById('respBody').innerHTML = '';
+    const chatHist = document.getElementById('chatHistory');
+    const chatRow = document.getElementById('chatInputRow');
+    if (chatHist) { chatHist.style.display = 'none'; chatHist.innerHTML = ''; }
+    if (chatRow) chatRow.style.display = 'none';
+  }
+  window.scrollTo(0, 0);
+}
+
+function renderHero() {
+  const iosE = sumCols(DATA.iosEsim);
+  const andE = sumCols(DATA.andEsim);
+  const iosR = iosE[2]/iosE[0], andR = andE[2]/andE[0];
+  const gap = Math.abs(andR - iosR);
+  const worse = iosR < andR ? 'iOS' : 'Android';
+  const better = worse === 'iOS' ? 'Android' : 'iOS';
+  const wR = worse === 'iOS' ? iosR : andR;
+  const bR = worse === 'iOS' ? andR : iosR;
+
+  document.getElementById('heroEyebrow').textContent = `${DATA.iosEsim.length}-day window · analysis complete`;
+  if (gap > 0.1) {
+    document.getElementById('heroTitle').innerHTML =
+      `<em>${worse}</em> install success sits at <span class="pill-num">${pct(wR,0)}</span>. ${better} is at ${pct(bR,0)}.`;
+    document.getElementById('heroDek').textContent =
+      `A ${(gap*100).toFixed(0)} percentage-point platform gap in post-purchase install success. What follows unpacks it — plus purchase-funnel drop-offs, daily trends, and manual exploration for whatever else you want to dig into.`;
+  } else {
+    document.getElementById('heroTitle').innerHTML =
+      `iOS is at <span class="pill-num">${pct(iosR,0)}</span>, Android at ${pct(andR,0)}.`;
+    document.getElementById('heroDek').textContent =
+      `Platform gap isn't pronounced here — look at the funnel drop-offs and conversion rates below for the main story.`;
+  }
+}
+
+function renderInsights() {
+  const ins = generateInsights();
+  document.getElementById('insightsList').innerHTML = ins.map(i => `
+    <div class="insight ${i.sev}">
+      <div class="ins-badge">${i.sevLabel}</div>
+      <div class="ins-body">
+        <h3>${i.title}</h3>
+        <p>${i.body}</p>
+      </div>
+      <div class="ins-metric">
+        <div class="big">${i.metric}</div>
+        <div class="unit">${i.unit}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderKPIs() {
+  const ios = sumCols(DATA.iosPurchase);
+  const and = sumCols(DATA.andPurchase);
+  const web = sumCols(DATA.web);
+  const iosE = sumCols(DATA.iosEsim);
+  const andE = sumCols(DATA.andEsim);
+
+  const kpis = [
+    { hero: true, label: 'Total transactions', value: fmt(ios[7]+and[7]+web[3]), sub: `iOS ${fmt(ios[7])} · Android ${fmt(and[7])} · Web ${fmt(web[3])}` },
+    { label: 'iOS install success', value: pct(iosE[2]/iosE[0],1), sub: `${fmt(iosE[2])} of ${fmt(iosE[0])} paying customers` },
+    { label: 'Android install success', value: pct(andE[2]/andE[0],1), sub: `${fmt(andE[2])} of ${fmt(andE[0])} paying customers` },
+    { label: 'Mobile session CR', value: pct((ios[7]+and[7])/(ios[0]+and[0]),2), sub: 'session → transaction, mobile-only' },
+  ];
+  document.getElementById('kpiGrid').innerHTML = kpis.map(k => `
+    <div class="kpi ${k.hero ? 'hero' : ''}">
+      <div class="label">${k.label}</div>
+      <div class="value">${k.value}</div>
+      <div class="sub">${k.sub}</div>
+    </div>
+  `).join('');
+}
+
+function renderFunnels() {
+  const ios = sumCols(DATA.iosPurchase);
+  const and = sumCols(DATA.andPurchase);
+  const h = SCHEMA.iosPurchase.headers;
+
+  const buildCol = (t, cls, lbl) => {
+    let worstIdx = -1, worstRate = 1;
+    for (let i = 4; i < t.length; i++) {
+      const r = t[i]/t[i-1];
+      if (r < worstRate && r > 0) { worstRate = r; worstIdx = i; }
+    }
+    return `
+      <div class="fc-col ${cls}">
+        <div class="platform-lbl"><span>${lbl}</span><span class="vol">${fmt(t[0])} sessions</span></div>
+        ${t.map((v, i) => {
+          const step = i === 0 ? 1 : v / t[i-1];
+          const isWorst = i === worstIdx;
+          return `<div class="fc-step${isWorst ? ' highlight' : ''}">
+            <span class="name">${h[i]}</span>
+            <span class="count">${fmt(v)}</span>
+            <span class="pct">${i === 0 ? '100%' : pct(step, 0)}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+  };
+
+  document.getElementById('purchaseFunnels').innerHTML =
+    buildCol(ios, 'ios', 'iOS') + buildCol(and, 'android', 'Android');
+  document.getElementById('funnelNote').textContent =
+    `These funnels aren't strictly sequential — users enter from multiple paths (e.g. Login Click can exceed Explore Plans). The biggest truly-sequential drop is highlighted.`;
+}
+
+function renderInstallFunnels() {
+  const iosE = sumCols(DATA.iosEsim);
+  const andE = sumCols(DATA.andEsim);
+  const h = SCHEMA.iosEsim.headers;
+
+  const build = (t, cls, lbl) => {
+    const vanished = t[1] - t[2] - t[3];
+    return `
+      <div class="fc-col ${cls}">
+        <div class="platform-lbl"><span>${lbl}</span><span class="vol">${fmt(t[0])} paid</span></div>
+        <div class="fc-step"><span class="name">${h[0]}</span><span class="count">${fmt(t[0])}</span><span class="pct">100%</span></div>
+        <div class="fc-step"><span class="name">${h[1]}</span><span class="count">${fmt(t[1])}</span><span class="pct">${pct(t[1]/t[0], 0)}</span></div>
+        <div class="fc-step highlight"><span class="name">${h[2]}</span><span class="count">${fmt(t[2])}</span><span class="pct">${pct(t[2]/t[0], 0)}</span></div>
+        <div class="fc-step"><span class="name">${h[3]}</span><span class="count">${fmt(t[3])}</span><span class="pct">${pct(t[3]/t[0], 0)}</span></div>
+        ${vanished > 0 ? `<div class="fc-step"><span class="name">Vanished after click</span><span class="count">${fmt(vanished)}</span><span class="pct">${pct(vanished/t[0], 0)}</span></div>` : ''}
+      </div>`;
+  };
+
+  document.getElementById('installFunnels').innerHTML =
+    build(iosE, 'ios', 'iOS') + build(andE, 'android', 'Android');
+
+  const iR = iosE[2]/iosE[0], aR = andE[2]/andE[0];
+  const g = (aR - iR) * 100;
+  document.getElementById('installNote').innerHTML =
+    `The install funnel is the real product. ${Math.abs(g) > 10 ? `${g > 0 ? 'iOS' : 'Android'} is ${Math.abs(g).toFixed(0)} percentage points behind here — same product, very different outcomes.` : `Both platforms perform similarly on install.`}`;
+}
+
+let trendVisible = { ios: true, android: true };
+
+// ============================================================
+// CHART HOVER / TOOLTIP
+// ============================================================
+function attachChartHover(svg, tip, cfg) {
+  const hit = svg.querySelector('rect[id$="Hit"]');
+  if (!hit) return;
+  const cursor = document.getElementById(cfg.cursorId);
+
+  const update = (clientX) => {
+    const rect = svg.getBoundingClientRect();
+    // Map from client coords to the SVG viewBox coords
+    const vbX = ((clientX - rect.left) / rect.width) * cfg.W;
+    // Clamp to plot area
+    const plotX = Math.max(cfg.pad.left, Math.min(cfg.W - cfg.pad.right, vbX));
+    // Find nearest index
+    const frac = (plotX - cfg.pad.left) / cfg.cW;
+    const idx = Math.max(0, Math.min(cfg.n - 1, Math.round(frac * (cfg.n - 1))));
+    const xAt = cfg.xFn(idx);
+
+    // Move cursor line
+    cursor.setAttribute('x1', xAt);
+    cursor.setAttribute('x2', xAt);
+    cursor.style.display = '';
+
+    // Build tooltip content and update dots
+    const activeDots = cfg.dots.filter(d => d.visible && d.series[idx] != null && !Number.isNaN(d.series[idx]));
+    const rows = activeDots.map(d => {
+      const dot = document.getElementById(d.id);
+      dot.setAttribute('cx', xAt);
+      dot.setAttribute('cy', cfg.yFn(d.series[idx]));
+      dot.style.display = '';
+      return `<div class="tt-row"><span class="tt-dot" style="background:${d.color}"></span>${d.label}: <strong>${cfg.formatValue(d.series[idx])}</strong></div>`;
+    }).join('');
+
+    // Hide dots for inactive series
+    cfg.dots.filter(d => !d.visible).forEach(d => {
+      const dot = document.getElementById(d.id);
+      if (dot) dot.style.display = 'none';
+    });
+
+    tip.innerHTML = `<div class="tt-day">${cfg.dayLabel(idx)}</div>${rows}`;
+    tip.classList.add('show');
+
+    // Position tooltip relative to the wrap (its parent)
+    const wrap = svg.parentElement;
+    const wrapRect = wrap.getBoundingClientRect();
+    const pxPerVb = rect.width / cfg.W;
+    const tipLeft = (xAt * pxPerVb) + (rect.left - wrapRect.left);
+    const tipTop = (cfg.yFn(activeDots[0] ? activeDots[0].series[idx] : 0) * (rect.height / cfg.H)) + (rect.top - wrapRect.top);
+    tip.style.left = tipLeft + 'px';
+    tip.style.top = tipTop + 'px';
+  };
+
+  hit.addEventListener('mousemove', e => update(e.clientX));
+  hit.addEventListener('mouseleave', () => {
+    tip.classList.remove('show');
+    cursor.style.display = 'none';
+    cfg.dots.forEach(d => {
+      const dot = document.getElementById(d.id);
+      if (dot) dot.style.display = 'none';
+    });
+  });
+
+  // Touch support: tap to show, tap outside to hide
+  hit.addEventListener('touchstart', e => {
+    if (e.touches[0]) { update(e.touches[0].clientX); e.preventDefault(); }
+  }, { passive: false });
+  hit.addEventListener('touchmove', e => {
+    if (e.touches[0]) { update(e.touches[0].clientX); e.preventDefault(); }
+  }, { passive: false });
+}
+
+function renderTrendChart() {
+  const iosR = DATA.iosEsim.map(r => r[2]/r[0]);
+  const andR = DATA.andEsim.map(r => r[2]/r[0]);
+  const iosS = rolling(iosR, 7);
+  const andS = rolling(andR, 7);
+
+  const svg = document.getElementById('trendChart');
+  const W=1200, H=320;
+  const pad = { top: 24, right: 20, bottom: 40, left: 60 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+  const n = iosS.length;
+  const x = i => pad.left + (i/(n-1))*cW;
+  const y = v => pad.top + (1-v)*cH;
+
+  let grid = '';
+  [0.2,0.4,0.6,0.8,1.0].forEach(v => {
+    grid += `<line x1="${pad.left}" y1="${y(v)}" x2="${W-pad.right}" y2="${y(v)}" stroke="#d9d3c3" stroke-width="1" stroke-dasharray="2 3"/>`;
+    grid += `<text x="${pad.left-10}" y="${y(v)+4}" text-anchor="end" font-family="DM Mono, monospace" font-size="10" fill="#9a9a92">${Math.round(v*100)}%</text>`;
+  });
+  [0, Math.floor(n/3), Math.floor(2*n/3), n-1].forEach(i => {
+    grid += `<text x="${x(i)}" y="${H-pad.bottom+22}" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#9a9a92">Day ${i+1}</text>`;
+  });
+
+  const mkPath = a => a.map((v,i) => `${i===0?'M':'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const andPath = mkPath(andS);
+  const iosPath = mkPath(iosS);
+
+  let gapFill = '';
+  if (trendVisible.ios && trendVisible.android) {
+    gapFill = `M${x(0)},${y(andS[0])} ` +
+      andS.map((v,i)=>`L${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ') +
+      ' ' + iosS.map((v,i)=>`L${x(n-1-i).toFixed(1)},${y(iosS[n-1-i]).toFixed(1)}`).join(' ') + ' Z';
+  }
+
+  // End-value labels: placed at the top-right of the chart, inside a subtle pill, stacked.
+  // Avoids collision with the data points and with each other when lines converge.
+  const visibleCount = (trendVisible.android ? 1 : 0) + (trendVisible.ios ? 1 : 0);
+  const labelBoxW = 118;
+  const labelBoxH = 26;
+  const labelX = W - pad.right - labelBoxW;
+  const labelGap = 4;
+  let labelBlock = '';
+  if (visibleCount > 0) {
+    let lblYStart = pad.top + 4;
+    let ix = 0;
+    if (trendVisible.android) {
+      const yPos = lblYStart + ix * (labelBoxH + labelGap);
+      labelBlock += `
+        <rect x="${labelX}" y="${yPos}" width="${labelBoxW}" height="${labelBoxH}" rx="13" fill="white" stroke="#d9d3c3" stroke-width="1"/>
+        <circle cx="${labelX + 14}" cy="${yPos + labelBoxH/2}" r="4" fill="#3a7a42"/>
+        <text x="${labelX + 26}" y="${yPos + labelBoxH/2 + 4}" font-family="DM Mono, monospace" font-size="11" fill="#3a7a42" font-weight="600">Android ${Math.round(andS[n-1]*100)}%</text>
+      `;
+      ix++;
+    }
+    if (trendVisible.ios) {
+      const yPos = lblYStart + ix * (labelBoxH + labelGap);
+      labelBlock += `
+        <rect x="${labelX}" y="${yPos}" width="${labelBoxW}" height="${labelBoxH}" rx="13" fill="white" stroke="#d9d3c3" stroke-width="1"/>
+        <circle cx="${labelX + 14}" cy="${yPos + labelBoxH/2}" r="4" fill="#1a1b1a"/>
+        <text x="${labelX + 26}" y="${yPos + labelBoxH/2 + 4}" font-family="DM Mono, monospace" font-size="11" fill="#1a1b1a" font-weight="600">iOS ${Math.round(iosS[n-1]*100)}%</text>
+      `;
+    }
+  }
+
+  svg.innerHTML = `
+    ${grid}
+    ${gapFill ? `<path d="${gapFill}" fill="#d4f462" opacity="0.35"/>` : ''}
+    ${trendVisible.android ? `<path d="${andPath}" fill="none" stroke="#3a7a42" stroke-width="2.5" stroke-linejoin="round"/>` : ''}
+    ${trendVisible.ios ? `<path d="${iosPath}" fill="none" stroke="#1a1b1a" stroke-width="2.5" stroke-linejoin="round"/>` : ''}
+    ${trendVisible.android ? `<circle cx="${x(n-1)}" cy="${y(andS[n-1])}" r="5" fill="#3a7a42"/>` : ''}
+    ${trendVisible.ios ? `<circle cx="${x(n-1)}" cy="${y(iosS[n-1])}" r="5" fill="#1a1b1a"/>` : ''}
+    ${labelBlock}
+    <line id="trendCursor" x1="0" y1="${pad.top}" x2="0" y2="${pad.top+cH}" stroke="#1a1b1a" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>
+    <circle id="trendDotIos" r="4" fill="#1a1b1a" style="display:none"/>
+    <circle id="trendDotAnd" r="4" fill="#3a7a42" style="display:none"/>
+    <rect id="trendHit" x="${pad.left}" y="${pad.top}" width="${cW}" height="${cH}" fill="transparent" style="cursor: crosshair"/>
+  `;
+
+  attachChartHover(svg, document.getElementById('trendTip'), {
+    pad, cW, cH, n, W, H,
+    xFn: i => pad.left + (i/(n-1))*cW,
+    yFn: v => pad.top + (1-v)*cH,
+    cursorId: 'trendCursor',
+    dots: [
+      { id: 'trendDotIos', series: iosS, color: '#1a1b1a', label: 'iOS', visible: trendVisible.ios },
+      { id: 'trendDotAnd', series: andS, color: '#3a7a42', label: 'Android', visible: trendVisible.android }
+    ],
+    dayLabel: i => `Day ${i+1}`,
+    formatValue: v => Math.round(v*100) + '%'
+  });
+
+  const lg = document.getElementById('trendLegend');
+  lg.innerHTML = `
+    <span class="item ${!trendVisible.android?'hidden':''}" data-k="android"><span class="swatch" style="background:#3a7a42"></span>Android</span>
+    <span class="item ${!trendVisible.ios?'hidden':''}" data-k="ios"><span class="swatch" style="background:#1a1b1a"></span>iOS</span>
+  `;
+  lg.querySelectorAll('.item').forEach(el => {
+    el.onclick = () => { trendVisible[el.dataset.k] = !trendVisible[el.dataset.k]; renderTrendChart(); };
+  });
+}
+
+function setupExplore() {
+  const sheetSel = document.getElementById('exSheet');
+  const colSel = document.getElementById('exColumn');
+  const ratioSel = document.getElementById('exRatio');
+  const smoothSel = document.getElementById('exSmooth');
+
+  const labels = {
+    iosPurchase: 'iOS purchase funnel',
+    andPurchase: 'Android purchase funnel',
+    web: 'Web flow',
+    iosEsim: 'iOS eSIM setup',
+    andEsim: 'Android eSIM setup',
+    dailyCR: 'Daily CR',
+    webVisitors: 'Web daily visitors',
+    dailySessions: 'Daily sessions',
+  };
+
+  sheetSel.innerHTML = Object.keys(DATA).map(k =>
+    `<option value="${k}">${labels[k] || k}</option>`).join('');
+
+  const repopulate = () => {
+    const s = sheetSel.value;
+    const h = SCHEMA[s].headers;
+    colSel.innerHTML = h.map((x, i) => `<option value="${i}">${x}</option>`).join('');
+
+    const rows = DATA[s].length;
+    const opts = ['<option value="">— show raw values —</option>'];
+    for (const sk of Object.keys(DATA)) {
+      if (DATA[sk].length !== rows) continue;
+      SCHEMA[sk].headers.forEach((col, i) =>
+        opts.push(`<option value="${sk}:${i}">${labels[sk]} → ${col}</option>`));
+    }
+    ratioSel.innerHTML = opts.join('');
+    drawExplore();
+  };
+
+  sheetSel.onchange = repopulate;
+  colSel.onchange = drawExplore;
+  ratioSel.onchange = drawExplore;
+  smoothSel.onchange = drawExplore;
+  repopulate();
+}
+
+function drawExplore() {
+  const sheet = document.getElementById('exSheet').value;
+  const col = parseInt(document.getElementById('exColumn').value, 10);
+  const sm = parseInt(document.getElementById('exSmooth').value, 10);
+  const ratio = document.getElementById('exRatio').value;
+
+  const rows = DATA[sheet];
+  let series = rows.map(r => r[col]);
+  let isRatio = false;
+  if (ratio) {
+    const [rs, rc] = ratio.split(':');
+    const ri = parseInt(rc, 10);
+    const div = DATA[rs];
+    series = series.map((v, i) => {
+      const d = div[i] && div[i][ri];
+      return (d && d !== 0) ? v/d : null;
+    });
+    isRatio = true;
+  }
+  const smoothed = rolling(series, sm);
+  const valid = smoothed.filter(v => v != null && !isNaN(v));
+  const total = series.reduce((a,b) => a + (b||0), 0);
+  const avg = valid.reduce((a,b) => a+b, 0) / valid.length;
+  const mn = Math.min(...valid), mx = Math.max(...valid);
+  const first = valid[0], last = valid[valid.length-1];
+  const change = ((last-first)/first) * 100;
+
+  document.getElementById('exStats').innerHTML = `
+    <div class="stat"><div class="lbl">Total</div><div class="val">${isRatio ? '—' : fmt(total)}</div></div>
+    <div class="stat"><div class="lbl">Average</div><div class="val">${isRatio ? pct(avg,2) : fmt(avg)}</div></div>
+    <div class="stat"><div class="lbl">Min</div><div class="val">${isRatio ? pct(mn,2) : fmt(mn)}</div></div>
+    <div class="stat"><div class="lbl">Max</div><div class="val">${isRatio ? pct(mx,2) : fmt(mx)}</div></div>
+    <div class="stat"><div class="lbl">First → Last</div><div class="val">${change >= 0 ? '+' : ''}${change.toFixed(1)}%</div></div>
+  `;
+
+  const svg = document.getElementById('exChart');
+  const W=1200, H=300;
+  const pad = { top: 36, right: 40, bottom: 40, left: 76 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+  const n = smoothed.length;
+  const x = i => pad.left + (n > 1 ? (i/(n-1))*cW : cW/2);
+  const y = v => pad.top + (1 - (v-mn)/(mx-mn || 1))*cH;
+
+  let grid = '';
+  for (let k = 0; k <= 4; k++) {
+    const v = mn + (mx-mn)*(1-k/4);
+    const gy = pad.top + (k/4)*cH;
+    grid += `<line x1="${pad.left}" y1="${gy}" x2="${W-pad.right}" y2="${gy}" stroke="#d9d3c3" stroke-width="1" stroke-dasharray="2 3"/>`;
+    grid += `<text x="${pad.left-10}" y="${gy+4}" text-anchor="end" font-family="DM Mono, monospace" font-size="10" fill="#9a9a92">${isRatio ? pct(v,2) : fmt(v)}</text>`;
+  }
+  [0, Math.floor(n/3), Math.floor(2*n/3), n-1].forEach(i => {
+    grid += `<text x="${x(i)}" y="${H-pad.bottom+22}" text-anchor="middle" font-family="DM Mono, monospace" font-size="10" fill="#9a9a92">Day ${i+1}</text>`;
+  });
+
+  const path = smoothed.map((v,i) => v==null ? '' : `${i===0?'M':'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).filter(Boolean).join(' ');
+  const area = `M${x(0)},${pad.top+cH} L` +
+    smoothed.map((v,i) => v==null ? '' : `${x(i).toFixed(1)},${y(v).toFixed(1)}`).filter(Boolean).join(' L') +
+    ` L${x(n-1)},${pad.top+cH} Z`;
+
+  const h = SCHEMA[sheet].headers;
+  const title = isRatio
+    ? `${h[col]} ÷ ${document.getElementById('exRatio').selectedOptions[0].text.replace('— ','')}`
+    : h[col];
+
+  svg.innerHTML = `
+    ${grid}
+    <text x="${pad.left}" y="${pad.top-14}" font-family="DM Sans, sans-serif" font-size="13" font-weight="500" fill="#1a1b1a">${title}</text>
+    <path d="${area}" fill="#d4f462" opacity="0.5"/>
+    <path d="${path}" fill="none" stroke="#1a1b1a" stroke-width="2.5" stroke-linejoin="round"/>
+    <circle cx="${x(n-1)}" cy="${y(smoothed[n-1])}" r="5" fill="#1a1b1a"/>
+    <line id="exCursor" x1="0" y1="${pad.top}" x2="0" y2="${pad.top+cH}" stroke="#1a1b1a" stroke-width="1" stroke-dasharray="3 3" style="display:none"/>
+    <circle id="exDot" r="4" fill="#1a1b1a" style="display:none"/>
+    <rect id="exHit" x="${pad.left}" y="${pad.top}" width="${cW}" height="${cH}" fill="transparent" style="cursor: crosshair"/>
+  `;
+
+  attachChartHover(svg, document.getElementById('exTip'), {
+    pad, cW, cH, n, W, H,
+    xFn: i => pad.left + (n > 1 ? (i/(n-1))*cW : cW/2),
+    yFn: v => pad.top + (1 - (v-mn)/(mx-mn || 1))*cH,
+    cursorId: 'exCursor',
+    dots: [
+      { id: 'exDot', series: smoothed, color: '#1a1b1a', label: title, visible: true }
+    ],
+    dayLabel: i => `Day ${i+1}`,
+    formatValue: v => isRatio ? pct(v, 2) : fmt(v)
+  });
+}
+
+// ============================================================
+// AI PROMPT GENERATION
+// ============================================================
+function buildDataContext() {
+  // Compact, factual snapshot of the dataset for AI prompts
+  const ios = sumCols(DATA.iosPurchase);
+  const and = sumCols(DATA.andPurchase);
+  const web = sumCols(DATA.web);
+  const iosE = sumCols(DATA.iosEsim);
+  const andE = sumCols(DATA.andEsim);
+  const days = DATA.iosEsim.length;
+
+  const iosInstallRate = iosE[2] / iosE[0];
+  const andInstallRate = andE[2] / andE[0];
+  const iosVanished = iosE[1] - iosE[2] - iosE[3];
+  const andVanished = andE[1] - andE[2] - andE[3];
+
+  const iosCR = ios[7] / ios[0];
+  const andCR = and[7] / and[0];
+  const webCR = web[3] / web[0];
+
+  // Trend: first third vs last third
+  const chunk = Math.max(14, Math.floor(days / 3));
+  const iosF = sumCols(DATA.iosEsim.slice(0, chunk));
+  const iosL = sumCols(DATA.iosEsim.slice(-chunk));
+  const iosFRate = iosF[2]/iosF[0], iosLRate = iosL[2]/iosL[0];
+
+  return `DATASET CONTEXT:
+- Product: eSIM marketplace (mobile data plans for travelers)
+- Window: ${days} days of daily data
+- Platforms tracked: iOS app, Android app, Web
+
+PURCHASE FUNNELS (${days}-day totals):
+
+iOS purchase funnel:
+- Sessions: ${fmt(ios[0])}
+- Explore Plans Click: ${fmt(ios[1])}
+- Login Click: ${fmt(ios[2])}
+- Login Success: ${fmt(ios[3])}
+- View Countries: ${fmt(ios[4])}
+- Plan Selected: ${fmt(ios[5])}
+- Continue to Checkout: ${fmt(ios[6])}
+- Transactions: ${fmt(ios[7])}
+- Overall session → transaction CR: ${pct(iosCR, 2)}
+
+Android purchase funnel:
+- Sessions: ${fmt(and[0])}
+- Explore Plans Click: ${fmt(and[1])}
+- Login Click: ${fmt(and[2])}
+- Login Success: ${fmt(and[3])}
+- View Countries: ${fmt(and[4])}
+- Plan Selected: ${fmt(and[5])}
+- Continue to Checkout: ${fmt(and[6])}
+- Transactions: ${fmt(and[7])}
+- Overall session → transaction CR: ${pct(andCR, 2)}
+
+Web flow:
+- Landing: ${fmt(web[0])} → Pricing: ${fmt(web[1])} → Checkout: ${fmt(web[2])} → Transactions: ${fmt(web[3])}
+- Overall landing → transaction CR: ${pct(webCR, 2)}
+- Biggest drop: Pricing → Checkout at ${pct(web[2]/web[1], 1)}
+
+NOTE: Purchase funnels are NOT strictly sequential — users enter from multiple paths (e.g., Login Click often exceeds Explore Plans Click because logged-in users skip ahead). Absolute volumes are reliable; step-by-step conversion percentages should be interpreted with caution.
+
+POST-PURCHASE eSIM INSTALL (strictly sequential):
+
+iOS install flow:
+- Paid customers: ${fmt(iosE[0])}
+- Clicked Install: ${fmt(iosE[1])} (${pct(iosE[1]/iosE[0], 0)})
+- Install Success (confirmed): ${fmt(iosE[2])} (${pct(iosE[2]/iosE[0], 0)})
+- Install Failed (explicit error): ${fmt(iosE[3])} (${pct(iosE[3]/iosE[0], 0)})
+- Vanished after click (no success, no failure event): ${fmt(iosVanished)} (${pct(iosVanished/iosE[1], 0)} of clicks)
+- **iOS install success rate: ${pct(iosInstallRate, 1)}**
+
+Android install flow:
+- Paid customers: ${fmt(andE[0])}
+- Clicked Install: ${fmt(andE[1])} (${pct(andE[1]/andE[0], 0)})
+- Install Success: ${fmt(andE[2])} (${pct(andE[2]/andE[0], 0)})
+- Install Failed: ${fmt(andE[3])} (${pct(andE[3]/andE[0], 0)})
+- Vanished after click: ${fmt(Math.max(0, andVanished))} (${pct(Math.max(0, andVanished)/andE[1], 0)} of clicks)
+- **Android install success rate: ${pct(andInstallRate, 1)}**
+
+PLATFORM GAP: iOS install success is ${((andInstallRate - iosInstallRate)*100).toFixed(0)} percentage points behind Android.
+
+TREND: iOS install success rate moved from ${pct(iosFRate, 1)} (first ${chunk} days) to ${pct(iosLRate, 1)} (last ${chunk} days), a ${((iosLRate - iosFRate)*100).toFixed(1)} pp change.
+
+SCALE: ~${fmt((iosE[0] - iosE[2]) / (days/30))} iOS customers per month pay for an eSIM without a confirmed install event. Over the full window, that's ${fmt(iosE[0] - iosE[2])} customers.
+
+DATA LIMITATIONS (important):
+- No refund rate data
+- No support ticket volume data
+- No revenue/ARPU data
+- Cannot directly measure downstream business impact; any such claim must be a hypothesis to validate.`;
+}
+
+function buildSummaryPrompt() {
+  return `You are a senior product analyst. Below is a compact snapshot of a product analytics dataset. Write a SHORT executive summary (one paragraph, 100–150 words) of what the data shows and why it matters commercially.
+
+Rules:
+- Lead with the single biggest finding.
+- Quantify it.
+- Note the most important caveat or data limitation.
+- Write for an executive audience (product VP or C-level).
+- Be direct, specific, and honest about uncertainty. No hype.
+
+${buildDataContext()}`;
+}
+
+function buildBriefPrompt() {
+  return `You are a senior Product Owner. Using the dataset below, draft a complete Opportunity Brief. Use this exact structure with these section headings:
+
+1. **Target** — Proposed outcome metric with starting point → goal. Include proposed Reach (users/month), Impact (3/2/1/0.5/0.25), and Confidence (%).
+2. **Problem statement** — What's broken, who is affected, how many.
+3. **Issue evidence** — Quantitative facts from the data. Cite specific numbers. Flag any data caveats.
+4. **Competitor analysis** — Brief note on how competing eSIM providers (e.g. Airalo, Holafly, Saily) handle this part of the UX. State clearly when competitor data isn't available in the dataset and would need separate research.
+5. **Considered solutions** — At least 4 options including "Do nothing". For each: brief description, pros, cons.
+6. **Proposed approach** — Pick one option. Include experiment plan (primary metric, guardrail metrics, success threshold) and a rough release plan with timing.
+7. **Risks** — 3–5 risks, each with a proposed mitigation (accepting a risk is a valid mitigation).
+8. **Supporting information** — Anything worth flagging that didn't fit above.
+
+Rules:
+- Ground every quantitative claim in the dataset below.
+- Be explicit about what the data does NOT tell us (refund rate, support volume, etc.).
+- Prefer plain language over jargon.
+- Flag assumptions clearly.
+- Do not fabricate numbers.
+
+${buildDataContext()}`;
+}
+
+function buildQAPrompt(question) {
+  const q = (question || '').trim() || 'What is the most important finding in this data?';
+  return `You are a senior product analyst. Using ONLY the dataset snapshot below, answer the following question. If the answer cannot be derived from the data alone, say so explicitly and explain what additional data would be needed.
+
+QUESTION: ${q}
+
+Rules:
+- Ground every claim in specific numbers from the dataset.
+- Be honest about uncertainty and data limitations.
+- Keep it concise (3–6 short paragraphs max).
+- Don't invent data points that aren't in the snapshot.
+
+${buildDataContext()}`;
+}
+
+function buildSectionPrompt(section) {
+  const h = SCHEMA.iosPurchase.headers;
+  const eh = SCHEMA.iosEsim.headers;
+
+  if (section === 'purchase') {
+    const ios = sumCols(DATA.iosPurchase);
+    const and = sumCols(DATA.andPurchase);
+    const web = sumCols(DATA.web);
+    const wh = SCHEMA.web.headers;
+    const iosSteps = ios.map((v, i) => `${h[i]}: ${fmt(v)} (${i === 0 ? '100%' : pct(v/ios[0], 1)})`).join('\n  ');
+    const andSteps = and.map((v, i) => `${h[i]}: ${fmt(v)} (${i === 0 ? '100%' : pct(v/and[0], 1)})`).join('\n  ');
+    const webSteps = web.map((v, i) => `${wh[i]}: ${fmt(v)} (${i === 0 ? '100%' : pct(v/web[0], 1)})`).join('\n  ');
+
+    return `You are a senior product analyst. Analyze the PURCHASE FUNNEL data below. These are totals across the full data window.
+
+Focus exclusively on:
+1. Where the biggest step-to-step drops happen on each platform.
+2. How iOS, Android, and Web compare — where do they diverge most?
+3. What the step conversions suggest about user intent vs friction.
+4. Data quality flags (e.g. Login Click exceeding Explore Plans means non-sequential entry).
+
+Do NOT cover install/post-purchase data — that's a separate analysis. Keep it to 4–6 short paragraphs, grounded in specific numbers.
+
+iOS PURCHASE FUNNEL:
+  ${iosSteps}
+
+ANDROID PURCHASE FUNNEL:
+  ${andSteps}
+
+WEB FUNNEL:
+  ${webSteps}`;
+  }
+
+  if (section === 'install') {
+    const iosE = sumCols(DATA.iosEsim);
+    const andE = sumCols(DATA.andEsim);
+    const iosVanished = iosE[1] - iosE[2] - iosE[3];
+    const andVanished = andE[1] - andE[2] - andE[3];
+    const iosInstallRate = iosE[2]/iosE[0];
+    const andInstallRate = andE[2]/andE[0];
+
+    return `You are a senior product analyst. Analyze the POST-PURCHASE INSTALL funnel data below. These are paying customers — they've already paid, and this measures whether they successfully activate the product.
+
+Focus exclusively on:
+1. The install success rate on each platform and the size of the gap.
+2. Where users disappear — failed installs vs "vanished after click" (never came back after tapping install).
+3. What this says about onboarding quality, technical reliability, and retention risk.
+4. Which platform's problem is more severe and why (volume × rate).
+
+Keep it to 4–6 short paragraphs, grounded in specific numbers. This data represents paying customers, so every % gap has direct revenue/refund/support implications.
+
+iOS INSTALL FUNNEL (paying customers only):
+  ${eh[0]}: ${fmt(iosE[0])} (100%)
+  ${eh[1]}: ${fmt(iosE[1])} (${pct(iosE[1]/iosE[0], 1)})
+  ${eh[2]}: ${fmt(iosE[2])} (${pct(iosInstallRate, 1)})
+  ${eh[3]}: ${fmt(iosE[3])} (${pct(iosE[3]/iosE[0], 1)})
+  Vanished after click: ${fmt(iosVanished)} (${pct(iosVanished/iosE[0], 1)})
+
+ANDROID INSTALL FUNNEL (paying customers only):
+  ${eh[0]}: ${fmt(andE[0])} (100%)
+  ${eh[1]}: ${fmt(andE[1])} (${pct(andE[1]/andE[0], 1)})
+  ${eh[2]}: ${fmt(andE[2])} (${pct(andInstallRate, 1)})
+  ${eh[3]}: ${fmt(andE[3])} (${pct(andE[3]/andE[0], 1)})
+  Vanished after click: ${fmt(andVanished)} (${pct(andVanished/andE[0], 1)})
+
+GAP: ${(Math.abs(iosInstallRate - andInstallRate) * 100).toFixed(1)} percentage points between platforms.`;
+  }
+}
+
+function analyzeSection(section) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    alert('Please paste your Gemini API key first (at the top of the AI analysis section below). Get a free one at aistudio.google.com/app/apikey');
+    document.getElementById('apiKeyInput').focus();
+    document.getElementById('apiKeyInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  CONVERSATION = [];
+  renderChatHistory();
+  const prompt = buildSectionPrompt(section);
+  const kind = section === 'purchase' ? 'purchase-funnel' : 'install-funnel';
+  runInitialGeneration(apiKey, prompt, kind);
+}
+
+// ============================================================
+// GEMINI AI
+// ============================================================
+
+// Shared state
+let LAST_RESPONSE_TEXT = '';
+let LAST_RESPONSE_KIND = '';
+let CONVERSATION = []; // Gemini-format: [{role:'user'|'model', parts:[{text}]}]
+let CHAT_SENDING = false;
+
+function wireAIButtons() {
+  document.querySelectorAll('.ai-btn').forEach(btn => {
+    btn.onclick = () => handleAIClick(btn.dataset.kind);
+  });
+}
+
+function getApiKey() {
+  return document.getElementById('apiKeyInput').value.trim();
+}
+
+function handleAIClick(kind) {
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    alert('Please paste your Gemini API key first. Get a free one at aistudio.google.com/app/apikey');
+    document.getElementById('apiKeyInput').focus();
+    return;
+  }
+
+  if (kind === 'qa') {
+    // Q&A needs a question → open small modal
+    document.getElementById('modalBg').classList.add('show');
+    document.getElementById('modalQuestion').value = '';
+    setTimeout(() => document.getElementById('modalQuestion').focus(), 50);
+  } else {
+    // Summary and Brief run immediately. Reset chat state.
+    CONVERSATION = [];
+    renderChatHistory();
+    const prompt = kind === 'summary' ? buildSummaryPrompt() : buildBriefPrompt();
+    runInitialGeneration(apiKey, prompt, kind);
+  }
+}
+
+function runQA() {
+  const apiKey = getApiKey();
+  const question = document.getElementById('modalQuestion').value.trim();
+  if (!question) {
+    alert('Please type a question first.');
+    return;
+  }
+  closeModal();
+  CONVERSATION = [];
+  renderChatHistory();
+  runInitialGeneration(apiKey, buildQAPrompt(question), 'qa');
+}
+
+function closeModal() {
+  document.getElementById('modalBg').classList.remove('show');
+}
+
+async function runInitialGeneration(apiKey, prompt, kind) {
+  const panel = document.getElementById('aiResponse');
+  const body = document.getElementById('respBody');
+  const status = document.getElementById('respStatus');
+  const actions = document.getElementById('respActions');
+  const chatHist = document.getElementById('chatHistory');
+  const chatRow = document.getElementById('chatInputRow');
+
+  panel.classList.add('show');
+  panel.classList.remove('done');
+  body.innerHTML = '';
+  status.textContent = 'Thinking…';
+  actions.style.display = 'none';
+  chatHist.style.display = 'none';
+  chatRow.style.display = 'none';
+  LAST_RESPONSE_TEXT = '';
+  LAST_RESPONSE_KIND = kind;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  try {
+    const text = await callGemini(apiKey, [{ role: 'user', parts: [{ text: prompt }] }]);
+    LAST_RESPONSE_TEXT = text;
+
+    // Seed the conversation so follow-ups have context
+    CONVERSATION = [
+      { role: 'user', parts: [{ text: prompt }] },
+      { role: 'model', parts: [{ text }] }
+    ];
+
+    panel.classList.add('done');
+    status.textContent = 'Done';
+    body.innerHTML = renderMarkdown(text);
+    actions.style.display = 'flex';
+
+    // Chat mode is enabled for brief — continuous follow-up questions
+    if (kind === 'brief') {
+      chatRow.style.display = 'flex';
+      document.getElementById('chatInput').placeholder = 'Ask a follow-up: e.g. "Expand the risks section" or "What would the A/B test look like?"';
+    }
+  } catch (err) {
+    panel.classList.add('done');
+    status.textContent = 'Error';
+    body.innerHTML = `<div class="resp-error"><strong>Request failed:</strong> ${escapeHtml(err.message)}<br><br>Most common cause: invalid API key. Double-check you copied it correctly from aistudio.google.com/app/apikey. If the key is valid, the free tier may be rate-limited — wait a minute and try again.</div>`;
+  }
+}
+
+async function callGemini(apiKey, contents) {
+  const model = 'gemini-flash-latest';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+  const reqBody = {
+    contents,
+    generationConfig: {
+      temperature: 0.4,
+      maxOutputTokens: 8192,
+      thinkingConfig: { thinkingBudget: 0 }
+    }
+  };
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    body: JSON.stringify(reqBody)
+  });
+
+  const rawText = await resp.text();
+  let data;
+  try { data = JSON.parse(rawText); }
+  catch { throw new Error('Invalid JSON from API: ' + rawText.slice(0, 200)); }
+
+  if (!resp.ok) throw new Error(data.error?.message || `HTTP ${resp.status}`);
+
+  const candidate = data.candidates?.[0];
+  if (!candidate) throw new Error('No candidates in response. ' + JSON.stringify(data).slice(0, 300));
+
+  const parts = candidate.content?.parts || [];
+  const text = parts.map(p => p.text || '').join('');
+
+  if (!text) {
+    const reason = candidate.finishReason || 'UNKNOWN';
+    throw new Error(`Empty response. Finish reason: ${reason}.`);
+  }
+  return text;
+}
+
+async function sendChatMessage() {
+  if (CHAT_SENDING) return;
+  const apiKey = getApiKey();
+  if (!apiKey) { alert('API key was cleared. Please paste it again.'); return; }
+
+  const input = document.getElementById('chatInput');
+  const question = input.value.trim();
+  if (!question) return;
+
+  // Optimistic render: add user message, clear input, show "thinking"
+  CONVERSATION.push({ role: 'user', parts: [{ text: question }] });
+  CONVERSATION.push({ role: 'model', parts: [{ text: '__LOADING__' }] });
+  renderChatHistory();
+  input.value = '';
+
+  CHAT_SENDING = true;
+  const sendBtn = document.getElementById('chatSendBtn');
+  sendBtn.disabled = true;
+  sendBtn.textContent = '…';
+
+  try {
+    const reply = await callGemini(apiKey, CONVERSATION.slice(0, -1)); // exclude the loading placeholder
+    CONVERSATION[CONVERSATION.length - 1] = { role: 'model', parts: [{ text: reply }] };
+    renderChatHistory();
+  } catch (err) {
+    CONVERSATION[CONVERSATION.length - 1] = { role: 'model', parts: [{ text: `_Error: ${err.message}_` }] };
+    renderChatHistory();
+  } finally {
+    CHAT_SENDING = false;
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send';
+    input.focus();
+  }
+}
+
+function renderChatHistory() {
+  const hist = document.getElementById('chatHistory');
+  // Skip index 0 and 1 — those are the initial prompt and main response (rendered in respBody)
+  const followups = CONVERSATION.slice(2);
+  if (followups.length === 0) {
+    hist.style.display = 'none';
+    hist.innerHTML = '';
+    return;
+  }
+  hist.style.display = 'block';
+  hist.innerHTML = followups.map(msg => {
+    const txt = msg.parts[0]?.text || '';
+    if (msg.role === 'user') {
+      return `<div class="chat-msg user"><div class="role">You</div>${escapeHtml(txt)}</div>`;
+    } else {
+      if (txt === '__LOADING__') {
+        return `<div class="chat-msg assistant"><div class="role">Gemini</div><span class="spinner" style="display:inline-block;vertical-align:middle"></span> Thinking…</div>`;
+      }
+      return `<div class="chat-msg assistant"><div class="role">Gemini</div>${renderMarkdown(txt)}</div>`;
+    }
+  }).join('');
+  // Scroll the response panel to the bottom so the newest follow-up is visible
+  const panel = document.getElementById('aiResponse');
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function copyResponse() {
+  // Include any follow-up chat in the copy as well
+  let full = LAST_RESPONSE_TEXT;
+  const followups = CONVERSATION.slice(2);
+  if (followups.length) {
+    full += '\n\n---\n\n## Follow-up Q&A\n\n';
+    for (let i = 0; i < followups.length; i += 2) {
+      const q = followups[i]?.parts[0]?.text || '';
+      const a = followups[i+1]?.parts[0]?.text || '';
+      full += `**Q:** ${q}\n\n${a}\n\n`;
+    }
+  }
+  const btn = document.getElementById('copyBtn');
+  navigator.clipboard.writeText(full).then(() => {
+    btn.classList.add('copied');
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = 'Copy'; }, 2000);
+  });
+}
+
+function downloadResponse() {
+  let full = LAST_RESPONSE_TEXT;
+  const followups = CONVERSATION.slice(2);
+  if (followups.length) {
+    full += '\n\n---\n\n## Follow-up Q&A\n\n';
+    for (let i = 0; i < followups.length; i += 2) {
+      const q = followups[i]?.parts[0]?.text || '';
+      const a = followups[i+1]?.parts[0]?.text || '';
+      full += `**Q:** ${q}\n\n${a}\n\n`;
+    }
+  }
+  const date = new Date().toISOString().slice(0, 10);
+  const kindLabel = LAST_RESPONSE_KIND === 'brief' ? 'brief' : LAST_RESPONSE_KIND === 'summary' ? 'summary' : 'analysis';
+  const filename = `${kindLabel}-${date}.md`;
+  const blob = new Blob([full], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+function renderMarkdown(md) {
+  let t = escapeHtml(md);
+  t = t.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+  t = t.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+  t = t.replace(/^# (.*)$/gm, '<h1>$1</h1>');
+  t = t.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  t = t.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--ink-2);text-decoration:underline;">$1</a>');
+
+  const lines = t.split('\n');
+  const out = [];
+  let ul = false, ol = false;
+  for (const line of lines) {
+    const b = line.match(/^\s*[-*]\s+(.+)$/);
+    const n = line.match(/^\s*(\d+)\.\s+(.+)$/);
+    if (b) {
+      if (ol) { out.push('</ol>'); ol = false; }
+      if (!ul) { out.push('<ul>'); ul = true; }
+      out.push('<li>' + b[1] + '</li>');
+    } else if (n) {
+      if (ul) { out.push('</ul>'); ul = false; }
+      if (!ol) { out.push('<ol>'); ol = true; }
+      out.push('<li>' + n[2] + '</li>');
+    } else {
+      if (ul) { out.push('</ul>'); ul = false; }
+      if (ol) { out.push('</ol>'); ol = false; }
+      out.push(line);
+    }
+  }
+  if (ul) out.push('</ul>');
+  if (ol) out.push('</ol>');
+  return out.join('\n');
+}
+
+// Close modal on backdrop click or Escape
+document.addEventListener('click', e => { if (e.target.id === 'modalBg') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+// Enter key in question input → submit
+document.getElementById('modalQuestion').addEventListener('keydown', e => {
+  if (e.key === 'Enter') runQA();
+});
+// Enter key in chat input → send follow-up
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') sendChatMessage();
+});
+</script>
+
+</body>
+</html>
