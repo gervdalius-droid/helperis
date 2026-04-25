@@ -815,6 +815,63 @@
   .chart-tooltip .tt-row { display: flex; align-items: center; gap: 6px; }
   .chart-tooltip .tt-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
 
+  /* LOADING OVERLAY — full-screen, used during Analyze / Transform */
+  .loader-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(244, 241, 234, 0.92);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .loader-overlay.show { opacity: 1; pointer-events: auto; }
+  .loader-card {
+    background: white; border-radius: 28px;
+    padding: 40px 56px; min-width: 320px;
+    text-align: center;
+    box-shadow: 0 12px 40px rgba(26, 27, 26, 0.08);
+    animation: loader-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes loader-pop {
+    0% { opacity: 0; transform: scale(0.92) translateY(8px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+  }
+  .loader-orbit {
+    width: 56px; height: 56px; margin: 0 auto 24px;
+    position: relative;
+  }
+  .loader-orbit-ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid var(--cream-2);
+    border-top-color: var(--ink);
+    animation: loader-spin 1s linear infinite;
+  }
+  .loader-orbit-dot {
+    position: absolute; top: -3px; left: 50%; margin-left: -5px;
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--lime);
+    transform-origin: 5px 31px;
+    animation: loader-spin 1s linear infinite;
+  }
+  @keyframes loader-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .loader-status {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px; font-weight: 600; letter-spacing: -0.01em;
+    color: var(--ink); margin-bottom: 6px;
+    transition: opacity 0.2s;
+  }
+  .loader-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: 0.06em;
+    transition: opacity 0.2s;
+  }
+  .loader-status.fade, .loader-sub.fade { opacity: 0; }
+
   .hidden { display: none !important; }
 
   @media (max-width: 900px) {
@@ -833,6 +890,18 @@
 </style>
 </head>
 <body>
+
+<!-- Full-screen loading overlay — used during Analyze and Transform actions -->
+<div class="loader-overlay" id="loaderOverlay">
+  <div class="loader-card">
+    <div class="loader-orbit">
+      <div class="loader-orbit-ring"></div>
+      <div class="loader-orbit-dot"></div>
+    </div>
+    <div class="loader-status" id="loaderStatus">Thinking…</div>
+    <div class="loader-sub" id="loaderSub">Crunching your numbers</div>
+  </div>
+</div>
 
 <div class="app">
 
@@ -1237,13 +1306,72 @@ function hideChoicePanel() {
   document.getElementById('choicePanel').classList.add('hidden');
 }
 
-// Analyze button → run the normal render flow
-document.getElementById('choiceAnalyze').addEventListener('click', () => {
+// ============================================================
+// LOADING OVERLAY — used between "drop file" and seeing results
+// Rotates through playful status messages so it feels alive
+// rather than frozen, even on a fast machine.
+// ============================================================
+let LOADER_ROTATE_TIMER = null;
+
+function showLoader(stages) {
+  const overlay = document.getElementById('loaderOverlay');
+  const status = document.getElementById('loaderStatus');
+  const sub = document.getElementById('loaderSub');
+
+  // Default messages if none provided
+  const messages = stages && stages.length ? stages : [
+    { status: 'Thinking…', sub: 'Crunching your numbers' }
+  ];
+
+  // Show overlay + first message
+  status.textContent = messages[0].status;
+  sub.textContent = messages[0].sub;
+  overlay.classList.add('show');
+
+  // Cycle through remaining messages every ~700ms with a fade
+  if (LOADER_ROTATE_TIMER) clearInterval(LOADER_ROTATE_TIMER);
+  let i = 0;
+  if (messages.length > 1) {
+    LOADER_ROTATE_TIMER = setInterval(() => {
+      i = (i + 1) % messages.length;
+      status.classList.add('fade');
+      sub.classList.add('fade');
+      setTimeout(() => {
+        status.textContent = messages[i].status;
+        sub.textContent = messages[i].sub;
+        status.classList.remove('fade');
+        sub.classList.remove('fade');
+      }, 200);
+    }, 900);
+  }
+}
+
+function hideLoader() {
+  const overlay = document.getElementById('loaderOverlay');
+  overlay.classList.remove('show');
+  if (LOADER_ROTATE_TIMER) {
+    clearInterval(LOADER_ROTATE_TIMER);
+    LOADER_ROTATE_TIMER = null;
+  }
+}
+
+// Analyze button → run the normal render flow with a faux-loading state
+document.getElementById('choiceAnalyze').addEventListener('click', async () => {
   if (!DATA || !RAW_FILE) return;
+  showLoader([
+    { status: 'Reading your file…', sub: '8 sheets of funnel data' },
+    { status: 'Computing conversions…', sub: 'Step-by-step rates' },
+    { status: 'Spotting biggest drop-offs…', sub: 'Where customers leave' },
+    { status: 'Building your report…', sub: 'Almost there' }
+  ]);
+  // Brief delay so the user perceives the loading state.
+  // (Without this, the report appears instantly and the loader flashes.)
+  await new Promise(r => setTimeout(r, 1800));
+  hideLoader();
   renderResults(RAW_FILE.name);
 });
 
-// Transform button → call the polisher library
+// Transform button → call the polisher library with a real loading state
 document.getElementById('choiceTransform').addEventListener('click', async () => {
   if (!RAW_FILE) return;
   const lib = window.PlatformComparisonTransformer;
@@ -1255,13 +1383,23 @@ document.getElementById('choiceTransform').addEventListener('click', async () =>
   const cta = document.getElementById('choiceTransformCta');
   btn.disabled = true;
   cta.innerHTML = '<span class="spinner-inline"></span>Transforming…';
+  showLoader([
+    { status: 'Loading transformer…', sub: 'Fetching the dependencies' },
+    { status: 'Reading your workbook…', sub: 'Parsing all 8 sheets' },
+    { status: 'Building Platform Comparison…', sub: 'Side-by-side summary' },
+    { status: 'Adding live formulas…', sub: 'SUMIFS and AVERAGEIFS' },
+    { status: 'Embedding charts…', sub: 'Bar charts and trend lines' },
+    { status: 'Packaging download…', sub: 'Almost ready' }
+  ]);
   try {
     const outputName = RAW_FILE.name.replace(/\.xlsx?$/i, '') + '_polished.xlsx';
     await lib.transformAndDownload(RAW_FILE, outputName);
+    hideLoader();
     cta.textContent = '✓ Downloaded — click to run again';
     btn.disabled = false;
   } catch (err) {
     console.error(err);
+    hideLoader();
     cta.textContent = '✗ Failed: ' + err.message;
     btn.disabled = false;
   }
