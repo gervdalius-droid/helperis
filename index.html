@@ -536,6 +536,135 @@
   .mini-ai-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .mini-ai-btn.dark { background: var(--lime); color: var(--ink); }
 
+  /* INLINE AI PANEL — rendered directly under its section */
+  .inline-ai-panel {
+    margin-top: 18px; background: var(--cream);
+    border: 1px solid var(--rule); border-radius: 20px;
+    padding: 20px 24px;
+    animation: fadeInUp 0.3s ease-out;
+    max-height: 640px; overflow-y: auto;
+  }
+  .inline-ai-panel.dark {
+    background: rgba(244,241,234,0.05); border-color: rgba(244,241,234,0.15);
+    color: var(--cream);
+  }
+  .inline-ai-head {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; margin-bottom: 14px; padding-bottom: 12px;
+    border-bottom: 1px solid var(--rule); flex-wrap: wrap;
+  }
+  .inline-ai-panel.dark .inline-ai-head {
+    border-bottom-color: rgba(244,241,234,0.15);
+  }
+  .inline-ai-lbl {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .inline-ai-panel.dark .inline-ai-lbl { color: rgba(244,241,234,0.5); }
+  .inline-ai-lbl .spinner {
+    width: 10px; height: 10px; border: 2px solid var(--rule);
+    border-top-color: var(--ink); border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .inline-ai-panel.dark .inline-ai-lbl .spinner {
+    border-color: rgba(244,241,234,0.2); border-top-color: var(--cream);
+  }
+  .inline-ai-panel.done .inline-ai-lbl .spinner { display: none; }
+  .inline-ai-actions { display: flex; gap: 6px; }
+  .inline-ai-btn {
+    background: var(--cream-2); border: none; border-radius: 999px;
+    padding: 5px 12px; font-family: 'DM Mono', monospace; font-size: 11px;
+    color: var(--ink); cursor: pointer; transition: background 0.15s;
+  }
+  .inline-ai-btn:hover { background: var(--rule); }
+  .inline-ai-btn.copied { background: var(--good); color: white; }
+  .inline-ai-panel.dark .inline-ai-btn {
+    background: rgba(244,241,234,0.1); color: var(--cream);
+  }
+  .inline-ai-panel.dark .inline-ai-btn:hover { background: rgba(244,241,234,0.2); }
+  .inline-ai-body {
+    font-size: 14px; line-height: 1.65; color: var(--ink-2);
+    white-space: pre-wrap; word-wrap: break-word;
+  }
+  .inline-ai-panel.dark .inline-ai-body { color: rgba(244,241,234,0.85); }
+  .inline-ai-body strong { color: var(--ink); }
+  .inline-ai-panel.dark .inline-ai-body strong { color: var(--cream); }
+  .inline-ai-body h1, .inline-ai-body h2, .inline-ai-body h3 {
+    font-weight: 600; color: var(--ink); margin: 16px 0 6px;
+  }
+  .inline-ai-panel.dark .inline-ai-body h1,
+  .inline-ai-panel.dark .inline-ai-body h2,
+  .inline-ai-panel.dark .inline-ai-body h3 { color: var(--cream); }
+  .inline-ai-body h1 { font-size: 17px; }
+  .inline-ai-body h2 { font-size: 15px; }
+  .inline-ai-body h3 { font-size: 14px; }
+  .inline-ai-body ul, .inline-ai-body ol { padding-left: 22px; margin: 6px 0; }
+  .inline-ai-body .resp-error { color: var(--danger); }
+
+  /* Inline chat */
+  .inline-ai-chat-history {
+    margin-top: 14px;
+  }
+  .inline-ai-chat-history:empty { display: none; }
+  .inline-ai-chat-history:not(:empty) {
+    padding-top: 14px; border-top: 1px solid var(--rule);
+  }
+  .inline-ai-panel.dark .inline-ai-chat-history:not(:empty) {
+    border-top-color: rgba(244,241,234,0.15);
+  }
+  .inline-chat-msg {
+    margin-bottom: 10px; padding: 10px 14px; border-radius: 12px;
+    font-size: 13px; line-height: 1.6;
+  }
+  .inline-chat-msg.user {
+    background: var(--cream-2); color: var(--ink); margin-left: 30px;
+  }
+  .inline-ai-panel.dark .inline-chat-msg.user {
+    background: rgba(244,241,234,0.1); color: var(--cream);
+  }
+  .inline-chat-msg.assistant {
+    background: white; border: 1px solid var(--rule); color: var(--ink-2);
+    margin-right: 30px; white-space: pre-wrap;
+  }
+  .inline-ai-panel.dark .inline-chat-msg.assistant {
+    background: rgba(244,241,234,0.04); border-color: rgba(244,241,234,0.15);
+    color: rgba(244,241,234,0.85);
+  }
+  .inline-chat-msg .role {
+    font-family: 'DM Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--ink-muted); margin-bottom: 4px;
+  }
+  .inline-ai-panel.dark .inline-chat-msg .role { color: rgba(244,241,234,0.4); }
+  .inline-ai-chat-row {
+    display: flex; gap: 8px; margin-top: 12px;
+    padding-top: 14px; border-top: 1px solid var(--rule);
+  }
+  .inline-ai-panel.dark .inline-ai-chat-row {
+    border-top-color: rgba(244,241,234,0.15);
+  }
+  .inline-ai-chat-input {
+    flex: 1; background: white; border: 1px solid transparent;
+    border-radius: 999px; padding: 10px 16px;
+    font-family: inherit; font-size: 13px; color: var(--ink); outline: none;
+  }
+  .inline-ai-chat-input:focus { border-color: var(--ink); }
+  .inline-ai-panel.dark .inline-ai-chat-input {
+    background: rgba(244,241,234,0.1); color: var(--cream);
+  }
+  .inline-ai-panel.dark .inline-ai-chat-input::placeholder { color: rgba(244,241,234,0.4); }
+  .inline-ai-panel.dark .inline-ai-chat-input:focus {
+    background: rgba(244,241,234,0.15); border-color: var(--lime);
+  }
+  .inline-ai-send-btn {
+    background: var(--lime); color: var(--ink); border: none;
+    padding: 8px 18px; border-radius: 999px;
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap;
+  }
+  .inline-ai-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
   /* AI SETUP + RESPONSE */
   .ai-setup {
     background: var(--cream-2); border-radius: 16px;
@@ -553,6 +682,27 @@
     font-size: 11px; color: var(--ink-muted); width: 100%;
   }
   .ai-setup .hint a { color: var(--ink-2); }
+
+  /* Demo-key badge: replaces input field when DEMO_API_KEY is configured */
+  .ai-setup.demo-badge { padding: 16px 20px; }
+  .demo-pill {
+    display: inline-flex; align-items: center; gap: 10px;
+    background: white; border-radius: 999px;
+    padding: 10px 18px; font-size: 13px;
+  }
+  .demo-pill strong { font-weight: 600; }
+  .demo-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--good);
+    box-shadow: 0 0 0 0 var(--good);
+    animation: demo-pulse 2s ease-out infinite;
+  }
+  @keyframes demo-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(58, 122, 66, 0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(58, 122, 66, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(58, 122, 66, 0); }
+  }
+  .demo-badge .hint a { color: var(--ink); cursor: pointer; }
 
   .ai-response {
     background: white; border: 1px solid var(--rule);
@@ -779,11 +929,20 @@
         <h2 class="section-title">Get AI <em>analysis</em></h2>
         <span class="section-kicker">Copy-paste prompts</span>
       </div>
-      <p class="ai-intro">Enter your Gemini API key and click any button below to run AI analysis on your data. The response streams back here.</p>
+      <p class="ai-intro" id="aiIntro">Enter your Gemini API key and click any button below to run AI analysis on your data. The response streams back here.</p>
 
-      <div class="ai-setup">
+      <div class="ai-setup" id="aiSetupBar">
         <input type="password" id="apiKeyInput" placeholder="Paste your Gemini API key (starts with AIza…)" autocomplete="off" spellcheck="false" />
         <div class="hint">Get a free key at <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">aistudio.google.com/app/apikey</a> — no credit card needed. Your key stays in this browser only.</div>
+      </div>
+
+      <!-- Demo-key badge: shown instead of the input when DEMO_API_KEY is set in script -->
+      <div class="ai-setup demo-badge hidden" id="aiDemoBadge">
+        <div class="demo-pill">
+          <span class="demo-dot"></span>
+          <span class="demo-text"><strong>Using shared demo key</strong> · ready to use</span>
+        </div>
+        <div class="hint">A demo Gemini key is built into this app for the team. Click any button below to run AI — no setup needed. <a href="#" id="useOwnKeyLink">Use your own key instead</a></div>
       </div>
 
       <div class="ai-buttons">
@@ -815,7 +974,7 @@
           <span class="resp-lbl"><span class="spinner"></span><span id="respStatus">Thinking…</span></span>
           <div class="resp-actions" id="respActions" style="display:none">
             <button class="resp-btn" id="copyBtn" onclick="copyResponse()">Copy</button>
-            <button class="resp-btn" id="downloadBtn" onclick="downloadResponse()">↓ Download</button>
+            <button class="resp-btn" id="downloadPdfBtn" onclick="downloadResponseAsPdf()">↓ Download PDF</button>
           </div>
         </div>
         <div class="resp-body" id="respBody"></div>
@@ -849,6 +1008,23 @@
         <div class="pullquote" id="funnelNote"></div>
         <button class="mini-ai-btn" onclick="analyzeSection('purchase')" title="Ask Gemini to analyze the purchase funnels">✦ AI analysis</button>
       </div>
+      <!-- Inline AI panel for this section -->
+      <div class="inline-ai-panel" id="inlineAiPurchase" style="display:none">
+        <div class="inline-ai-head">
+          <span class="inline-ai-lbl"><span class="spinner"></span><span class="inline-ai-status">Thinking…</span></span>
+          <div class="inline-ai-actions" style="display:none">
+            <button class="inline-ai-btn" onclick="copyInlineResponse('purchase')">Copy</button>
+            <button class="inline-ai-btn" onclick="downloadInlineResponse('purchase')">↓ Download</button>
+            <button class="inline-ai-btn" onclick="closeInlinePanel('purchase')" title="Close">✕</button>
+          </div>
+        </div>
+        <div class="inline-ai-body"></div>
+        <div class="inline-ai-chat-history"></div>
+        <div class="inline-ai-chat-row" style="display:none">
+          <input type="text" class="inline-ai-chat-input" placeholder="Ask a follow-up…" />
+          <button class="inline-ai-send-btn" onclick="sendInlineChatMessage('purchase')">Send</button>
+        </div>
+      </div>
     </section>
 
     <section class="tinted">
@@ -861,6 +1037,23 @@
       <div class="pullquote-row">
         <div class="pullquote" id="installNote"></div>
         <button class="mini-ai-btn dark" onclick="analyzeSection('install')" title="Ask Gemini to analyze the install funnels">✦ AI analysis</button>
+      </div>
+      <!-- Inline AI panel for this section (dark variant for tinted background) -->
+      <div class="inline-ai-panel dark" id="inlineAiInstall" style="display:none">
+        <div class="inline-ai-head">
+          <span class="inline-ai-lbl"><span class="spinner"></span><span class="inline-ai-status">Thinking…</span></span>
+          <div class="inline-ai-actions" style="display:none">
+            <button class="inline-ai-btn" onclick="copyInlineResponse('install')">Copy</button>
+            <button class="inline-ai-btn" onclick="downloadInlineResponse('install')">↓ Download</button>
+            <button class="inline-ai-btn" onclick="closeInlinePanel('install')" title="Close">✕</button>
+          </div>
+        </div>
+        <div class="inline-ai-body"></div>
+        <div class="inline-ai-chat-history"></div>
+        <div class="inline-ai-chat-row" style="display:none">
+          <input type="text" class="inline-ai-chat-input" placeholder="Ask a follow-up…" />
+          <button class="inline-ai-send-btn" onclick="sendInlineChatMessage('install')">Send</button>
+        </div>
       </div>
     </section>
 
@@ -936,6 +1129,28 @@
 </div>
 
 <script>
+// ============================================================================
+// 🔑 TEAM DEMO KEY CONFIGURATION
+// ============================================================================
+// To enable the "Using shared demo key" badge for your team:
+//   1. Paste your Gemini API key between the quotes below.
+//   2. CRITICAL: Lock the key down in Google Cloud Console first:
+//      • console.cloud.google.com/apis/credentials → restrict to
+//        "Generative Language API" only.
+//      • Add HTTP referrer restriction matching your GitHub Pages URL.
+//      • Set a daily quota cap and a monthly billing budget.
+//   3. Save this file. The badge appears automatically.
+//
+// To disable (force every user to bring their own key):
+//   • Leave DEMO_API_KEY as an empty string. The input field returns.
+//
+// SECURITY NOTE: anything in this file is visible to anyone who opens the
+// page. The key's safety relies entirely on the Google-side restrictions
+// above. A leaked key without restrictions WILL be abused within hours.
+// ============================================================================
+const DEMO_API_KEY = ""; // ← paste your restricted key here, e.g. "AIzaSy..."
+// ============================================================================
+
 let DATA = null;
 let SCHEMA = {};
 
@@ -1236,6 +1451,7 @@ function renderResults(fileName) {
   renderTrendChart();
   setupExplore();
   wireAIButtons();
+  wireInlineChatInputs();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -1273,6 +1489,23 @@ function resetApp() {
     if (chatHist) { chatHist.style.display = 'none'; chatHist.innerHTML = ''; }
     if (chatRow) chatRow.style.display = 'none';
   }
+  // Clear inline section panels
+  ['purchase', 'install'].forEach(s => {
+    const panel = inlinePanelEl(s);
+    if (panel) {
+      panel.style.display = 'none';
+      panel.classList.remove('done');
+      const body = panel.querySelector('.inline-ai-body');
+      const hist = panel.querySelector('.inline-ai-chat-history');
+      if (body) body.innerHTML = '';
+      if (hist) hist.innerHTML = '';
+    }
+    INLINE_STATE[s] = {
+      conversation: [], lastText: '',
+      kind: s === 'purchase' ? 'purchase-funnel' : 'install-funnel',
+      sending: false
+    };
+  });
   window.scrollTo(0, 0);
 }
 
@@ -1919,6 +2152,19 @@ GAP: ${(Math.abs(iosInstallRate - andInstallRate) * 100).toFixed(1)} percentage 
   }
 }
 
+// ============================================================
+// INLINE SECTION AI PANELS (Purchase / Install)
+// Separate conversation state per section — they don't pollute each other
+// ============================================================
+const INLINE_STATE = {
+  purchase: { conversation: [], lastText: '', kind: 'purchase-funnel', sending: false },
+  install:  { conversation: [], lastText: '', kind: 'install-funnel',  sending: false }
+};
+
+function inlinePanelEl(section) {
+  return document.getElementById(section === 'purchase' ? 'inlineAiPurchase' : 'inlineAiInstall');
+}
+
 function analyzeSection(section) {
   const apiKey = getApiKey();
   if (!apiKey) {
@@ -1927,11 +2173,175 @@ function analyzeSection(section) {
     document.getElementById('apiKeyInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
     return;
   }
-  CONVERSATION = [];
-  renderChatHistory();
+  // Reset this section's conversation (but leave the other section's alone)
+  INLINE_STATE[section] = {
+    conversation: [],
+    lastText: '',
+    kind: section === 'purchase' ? 'purchase-funnel' : 'install-funnel',
+    sending: false
+  };
   const prompt = buildSectionPrompt(section);
-  const kind = section === 'purchase' ? 'purchase-funnel' : 'install-funnel';
-  runInitialGeneration(apiKey, prompt, kind);
+  runInlineGeneration(section, apiKey, prompt);
+}
+
+function closeInlinePanel(section) {
+  const panel = inlinePanelEl(section);
+  panel.style.display = 'none';
+  panel.classList.remove('done');
+  INLINE_STATE[section] = {
+    conversation: [],
+    lastText: '',
+    kind: section === 'purchase' ? 'purchase-funnel' : 'install-funnel',
+    sending: false
+  };
+}
+
+async function runInlineGeneration(section, apiKey, prompt) {
+  const panel = inlinePanelEl(section);
+  const body = panel.querySelector('.inline-ai-body');
+  const status = panel.querySelector('.inline-ai-status');
+  const actions = panel.querySelector('.inline-ai-actions');
+  const chatRow = panel.querySelector('.inline-ai-chat-row');
+  const chatHist = panel.querySelector('.inline-ai-chat-history');
+
+  panel.style.display = 'block';
+  panel.classList.remove('done');
+  body.innerHTML = '';
+  chatHist.innerHTML = '';
+  status.textContent = 'Thinking…';
+  actions.style.display = 'none';
+  chatRow.style.display = 'none';
+
+  // Scroll the panel into view
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+
+  try {
+    const text = await callGemini(apiKey, [{ role: 'user', parts: [{ text: prompt }] }]);
+    INLINE_STATE[section].lastText = text;
+    INLINE_STATE[section].conversation = [
+      { role: 'user', parts: [{ text: prompt }] },
+      { role: 'model', parts: [{ text }] }
+    ];
+
+    panel.classList.add('done');
+    status.textContent = 'Done';
+    body.innerHTML = renderMarkdown(text);
+    actions.style.display = 'flex';
+    chatRow.style.display = 'flex';
+    panel.querySelector('.inline-ai-chat-input').placeholder = 'Ask a follow-up: e.g. "Why would that be the case?" or "What A/B test would you run?"';
+  } catch (err) {
+    panel.classList.add('done');
+    status.textContent = 'Error';
+    body.innerHTML = `<div class="resp-error"><strong>Request failed:</strong> ${escapeHtml(err.message)}<br><br>Most common cause: invalid API key or rate limit. Try again in a moment.</div>`;
+    actions.style.display = 'flex';
+  }
+}
+
+async function sendInlineChatMessage(section) {
+  const state = INLINE_STATE[section];
+  if (state.sending) return;
+  const apiKey = getApiKey();
+  if (!apiKey) { alert('API key was cleared. Please paste it again.'); return; }
+
+  const panel = inlinePanelEl(section);
+  const input = panel.querySelector('.inline-ai-chat-input');
+  const question = input.value.trim();
+  if (!question) return;
+
+  state.conversation.push({ role: 'user', parts: [{ text: question }] });
+  state.conversation.push({ role: 'model', parts: [{ text: '__LOADING__' }] });
+  renderInlineChatHistory(section);
+  input.value = '';
+
+  state.sending = true;
+  const sendBtn = panel.querySelector('.inline-ai-send-btn');
+  sendBtn.disabled = true;
+  sendBtn.textContent = '…';
+
+  try {
+    const reply = await callGemini(apiKey, state.conversation.slice(0, -1));
+    state.conversation[state.conversation.length - 1] = { role: 'model', parts: [{ text: reply }] };
+    renderInlineChatHistory(section);
+  } catch (err) {
+    state.conversation[state.conversation.length - 1] = { role: 'model', parts: [{ text: `_Error: ${err.message}_` }] };
+    renderInlineChatHistory(section);
+  } finally {
+    state.sending = false;
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send';
+    input.focus();
+  }
+}
+
+function renderInlineChatHistory(section) {
+  const panel = inlinePanelEl(section);
+  const hist = panel.querySelector('.inline-ai-chat-history');
+  const followups = INLINE_STATE[section].conversation.slice(2); // skip initial prompt + response
+  if (followups.length === 0) {
+    hist.innerHTML = '';
+    return;
+  }
+  hist.innerHTML = followups.map(msg => {
+    const txt = msg.parts[0]?.text || '';
+    if (msg.role === 'user') {
+      return `<div class="inline-chat-msg user"><div class="role">You</div>${escapeHtml(txt)}</div>`;
+    }
+    if (txt === '__LOADING__') {
+      return `<div class="inline-chat-msg assistant"><div class="role">Gemini</div><span class="spinner" style="display:inline-block;vertical-align:middle"></span> Thinking…</div>`;
+    }
+    return `<div class="inline-chat-msg assistant"><div class="role">Gemini</div>${renderMarkdown(txt)}</div>`;
+  }).join('');
+  panel.scrollTop = panel.scrollHeight;
+}
+
+function buildInlineFullText(section) {
+  const state = INLINE_STATE[section];
+  let full = state.lastText;
+  const followups = state.conversation.slice(2);
+  if (followups.length) {
+    full += '\n\n---\n\n## Follow-up Q&A\n\n';
+    for (let i = 0; i < followups.length; i += 2) {
+      const q = followups[i]?.parts[0]?.text || '';
+      const a = followups[i+1]?.parts[0]?.text || '';
+      full += `**Q:** ${q}\n\n${a}\n\n`;
+    }
+  }
+  return full;
+}
+
+function copyInlineResponse(section) {
+  const full = buildInlineFullText(section);
+  const panel = inlinePanelEl(section);
+  const btn = panel.querySelectorAll('.inline-ai-btn')[0]; // Copy is first
+  navigator.clipboard.writeText(full).then(() => {
+    btn.classList.add('copied');
+    btn.textContent = '✓ Copied';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = 'Copy'; }, 2000);
+  });
+}
+
+function downloadInlineResponse(section) {
+  const state = INLINE_STATE[section];
+  if (!state.lastText) return;
+  const kindLabel = section === 'purchase' ? 'Purchase funnel analysis' : 'Install funnel analysis';
+  openPdfPrintWindow({
+    kindLabel,
+    mainText: state.lastText,
+    followups: state.conversation.slice(2)
+  });
+}
+
+// Wire Enter key on both inline chat inputs (runs once after DOM is ready)
+function wireInlineChatInputs() {
+  ['inlineAiPurchase', 'inlineAiInstall'].forEach(id => {
+    const panel = document.getElementById(id);
+    const section = id === 'inlineAiPurchase' ? 'purchase' : 'install';
+    const input = panel.querySelector('.inline-ai-chat-input');
+    if (input && !input.dataset.wired) {
+      input.addEventListener('keydown', e => { if (e.key === 'Enter') sendInlineChatMessage(section); });
+      input.dataset.wired = '1';
+    }
+  });
 }
 
 // ============================================================
@@ -1951,8 +2361,37 @@ function wireAIButtons() {
 }
 
 function getApiKey() {
-  return document.getElementById('apiKeyInput').value.trim();
+  // Priority: user-entered key wins. If empty and we have a demo key configured, use it.
+  const userEntered = document.getElementById('apiKeyInput').value.trim();
+  if (userEntered) return userEntered;
+  if (typeof DEMO_API_KEY === 'string' && DEMO_API_KEY) return DEMO_API_KEY;
+  return '';
 }
+
+// On page load, decide whether to show the demo badge or the input.
+// User can override the demo by clicking "Use your own key instead".
+function initApiKeyUI() {
+  const hasDemoKey = typeof DEMO_API_KEY === 'string' && DEMO_API_KEY.length > 0;
+  if (!hasDemoKey) return; // Default state — input is visible, badge is hidden.
+
+  const setupBar = document.getElementById('aiSetupBar');
+  const badge = document.getElementById('aiDemoBadge');
+  const intro = document.getElementById('aiIntro');
+  setupBar.classList.add('hidden');
+  badge.classList.remove('hidden');
+  intro.textContent = 'Click any button below to run AI analysis on your data — no setup needed. The response streams back here.';
+
+  // "Use your own key instead" — swap back to the input
+  document.getElementById('useOwnKeyLink').addEventListener('click', e => {
+    e.preventDefault();
+    badge.classList.add('hidden');
+    setupBar.classList.remove('hidden');
+    intro.textContent = 'Enter your Gemini API key and click any button below to run AI analysis on your data. The response streams back here.';
+    document.getElementById('apiKeyInput').focus();
+  });
+}
+// Run after DOM is ready (the script lives at the bottom of <body>, so DOM is parsed)
+initApiKeyUI();
 
 function handleAIClick(kind) {
   const apiKey = getApiKey();
@@ -2158,27 +2597,145 @@ function copyResponse() {
   });
 }
 
-function downloadResponse() {
-  let full = LAST_RESPONSE_TEXT;
-  const followups = CONVERSATION.slice(2);
-  if (followups.length) {
-    full += '\n\n---\n\n## Follow-up Q&A\n\n';
+// PDF download via the browser's native print-to-PDF flow.
+// Zero dependencies — we open a new window with print-styled HTML, auto-trigger
+// the print dialog, and let the user pick "Save as PDF" as the destination.
+// Works on every modern browser on every OS.
+function downloadResponseAsPdf() {
+  if (!LAST_RESPONSE_TEXT) return;
+  const kindLabel = LAST_RESPONSE_KIND === 'brief' ? 'Helperis brief'
+                  : LAST_RESPONSE_KIND === 'summary' ? 'Executive summary'
+                  : 'Analysis';
+  openPdfPrintWindow({
+    kindLabel,
+    mainText: LAST_RESPONSE_TEXT,
+    followups: CONVERSATION.slice(2)
+  });
+}
+
+// Shared PDF generator. Takes a kindLabel, the main response markdown, and
+// an array of follow-up conversation turns. Opens a print-ready window.
+function openPdfPrintWindow({ kindLabel, mainText, followups }) {
+  const date = new Date().toISOString().slice(0, 10);
+  const filename = `${kindLabel.toLowerCase().replace(/ /g, '-')}-${date}`;
+
+  let bodyHtml = renderMarkdown(mainText);
+  if (followups && followups.length) {
+    bodyHtml += '<hr><h2>Follow-up Q&amp;A</h2>';
     for (let i = 0; i < followups.length; i += 2) {
       const q = followups[i]?.parts[0]?.text || '';
       const a = followups[i+1]?.parts[0]?.text || '';
-      full += `**Q:** ${q}\n\n${a}\n\n`;
+      bodyHtml += `<div class="qa-block">
+        <p class="qa-q"><strong>Q:</strong> ${escapeHtml(q)}</p>
+        <div class="qa-a">${renderMarkdown(a)}</div>
+      </div>`;
     }
   }
-  const date = new Date().toISOString().slice(0, 10);
-  const kindLabel = LAST_RESPONSE_KIND === 'brief' ? 'brief' : LAST_RESPONSE_KIND === 'summary' ? 'summary' : 'analysis';
-  const filename = `${kindLabel}-${date}.md`;
-  const blob = new Blob([full], { type: 'text/markdown;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+
+  const printHtml = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>${escapeHtml(filename)}</title>
+  <style>
+    @page { size: A4; margin: 2cm; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 11pt; line-height: 1.6; color: #1a1b1a;
+      max-width: 180mm; margin: 0 auto; padding: 0;
+    }
+    .header {
+      border-bottom: 2px solid #1a1b1a; padding-bottom: 16px; margin-bottom: 28px;
+      display: flex; justify-content: space-between; align-items: baseline;
+    }
+    .header .brand {
+      font-size: 18pt; font-weight: 700; letter-spacing: -0.02em;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    .header .meta {
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 9pt; color: #6b6c66;
+    }
+    .kind-label {
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 9pt; color: #6b6c66; text-transform: uppercase;
+      letter-spacing: 0.08em; margin-bottom: 6px;
+    }
+    h1 { font-size: 22pt; font-weight: 600; margin: 0 0 24px 0; letter-spacing: -0.02em; }
+    h2 {
+      font-size: 14pt; font-weight: 600; margin: 26px 0 10px 0;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 12pt; font-weight: 600; margin: 20px 0 8px 0;
+      page-break-after: avoid;
+    }
+    p { margin: 0 0 12px 0; }
+    ul, ol { margin: 8px 0 14px 0; padding-left: 24px; }
+    li { margin-bottom: 4px; }
+    strong { font-weight: 600; }
+    em { font-style: italic; }
+    hr {
+      border: none; border-top: 1px solid #d9d3c3;
+      margin: 28px 0; page-break-after: avoid;
+    }
+    .qa-block {
+      margin-bottom: 20px; padding-left: 14px;
+      border-left: 3px solid #d4f462;
+      page-break-inside: avoid;
+    }
+    .qa-q { color: #1a1b1a; font-style: italic; }
+    .qa-a { color: #3a3b36; }
+    a { color: #1a1b1a; text-decoration: underline; }
+    code {
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 10pt; background: #f4f1ea;
+      padding: 1px 5px; border-radius: 3px;
+    }
+    .footer {
+      margin-top: 40px; padding-top: 16px;
+      border-top: 1px solid #d9d3c3;
+      font-family: 'SF Mono', Menlo, Consolas, monospace;
+      font-size: 8pt; color: #9a9a92;
+      display: flex; justify-content: space-between;
+    }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">Helperis</div>
+    <div class="meta">Generated ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+  </div>
+  <div class="kind-label">${escapeHtml(kindLabel)}</div>
+  <h1>${escapeHtml(kindLabel)}</h1>
+  ${bodyHtml}
+  <div class="footer">
+    <span>Helperis · eSIM funnel analyzer</span>
+    <span>${escapeHtml(filename)}</span>
+  </div>
+  <${'script'}>
+    window.addEventListener('load', () => {
+      setTimeout(() => { window.print(); }, 200);
+    });
+    window.addEventListener('afterprint', () => { setTimeout(() => window.close(), 100); });
+  <${'/script'}>
+</body>
+</html>`;
+
+  const w = window.open('', '_blank', 'width=900,height=1100');
+  if (!w) {
+    alert('Pop-up blocked. Please allow pop-ups for this site to export PDFs, then try again.');
+    return;
+  }
+  w.document.open();
+  w.document.write(printHtml);
+  w.document.close();
+  try { w.document.title = filename; } catch (e) { /* ignore */ }
 }
 
 function escapeHtml(s) {
